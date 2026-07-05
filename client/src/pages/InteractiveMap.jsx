@@ -35,10 +35,6 @@ export default function InteractiveMap() {
   const [districtsList, setDistrictsList] = useState([]);
   const [constituenciesList, setConstituenciesList] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Real data state
-  const [districtsList, setDistrictsList] = useState([]);
-  const [constituenciesList, setConstituenciesList] = useState([]);
   const [representativesList, setRepresentativesList] = useState([]);
 
   const mapRef = useRef(null);

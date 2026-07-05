@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { civicEventsAPI } from '../api';
 import { 
   MapPin, 
   Search, 
@@ -99,11 +100,28 @@ const INITIAL_EVENTS = [
   }
 ];
 
+const mapBackendEventToFrontend = (backendEvt) => {
+  return {
+    id: backendEvt.id,
+    title: backendEvt.name,
+    category: backendEvt.eventType,
+    description: backendEvt.description || "",
+    locationName: backendEvt.locationName || `Coordinates: ${backendEvt.locationLat}, ${backendEvt.locationLng}`,
+    lat: Number(backendEvt.locationLat),
+    lng: Number(backendEvt.locationLng),
+    date: backendEvt.date ? new Date(backendEvt.date).toISOString().split('T')[0] : "",
+    time: backendEvt.time || "12:00 PM",
+    reporter: backendEvt.organizer,
+    verified: backendEvt.verified,
+    evidenceFile: backendEvt.evidenceFile || null
+  };
+};
+
 export default function CivicMap() {
-  const [events, setEvents] = useState(() => {
-    const saved = localStorage.getItem('nirikshan_civic_events');
-    return saved ? JSON.parse(saved) : INITIAL_EVENTS;
-  });
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filterVerified, setFilterVerified] = useState('all'); // 'all', 'verified', 'pending'
@@ -127,8 +145,43 @@ export default function CivicMap() {
   const leafletMapRef = useRef(null);
   const markersGroupRef = useRef(null);
 
+  const fetchEvents = async () => {
+    setLoading(true);
+    setErrorMessage(null);
+    try {
+      const backendEvents = await civicEventsAPI.getAll();
+      const mapped = backendEvents.map(mapBackendEventToFrontend);
+      
+      const saved = localStorage.getItem('nirikshan_civic_events');
+      const localEvents = saved ? JSON.parse(saved) : [];
+      const localUnverified = localEvents.filter(e => !e.verified);
+      
+      const combined = [...mapped];
+      localUnverified.forEach(localEvt => {
+        if (!combined.some(c => c.id === localEvt.id)) {
+          combined.push(localEvt);
+        }
+      });
+      
+      setEvents(combined);
+    } catch (err) {
+      console.error("Error loading civic events:", err);
+      const saved = localStorage.getItem('nirikshan_civic_events');
+      setEvents(saved ? JSON.parse(saved) : INITIAL_EVENTS);
+      setErrorMessage("Could not load verified events from server. Showing cached/offline events.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('nirikshan_civic_events', JSON.stringify(events));
+    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    if (events.length > 0) {
+      localStorage.setItem('nirikshan_civic_events', JSON.stringify(events));
+    }
   }, [events]);
 
   // Leaflet Map Initialization
@@ -241,46 +294,96 @@ export default function CivicMap() {
       ...prev,
       [name]: value
     }));
+    if (errors[name]) {
+      setErrors(prev => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
+    }
   };
 
-  const handleReportSubmit = (e) => {
+  const validateForm = () => {
+    const newErrors = {};
+    if (!reportData.title.trim()) {
+      newErrors.title = "Event title is required.";
+    } else if (reportData.title.trim().length < 2) {
+      newErrors.title = "Title must be at least 2 characters.";
+    }
+    
+    if (!reportData.locationName.trim()) {
+      newErrors.locationName = "Location / Ward is required.";
+    } else if (reportData.locationName.trim().length < 2) {
+      newErrors.locationName = "Location name must be at least 2 characters.";
+    }
+    
+    if (!reportData.lat || !reportData.lng) {
+      newErrors.latLng = "Please select coordinates by clicking on the map.";
+    }
+    
+    if (!reportData.date) {
+      newErrors.date = "Scheduled date is required.";
+    } else if (isNaN(Date.parse(reportData.date))) {
+      newErrors.date = "Please select a valid date.";
+    }
+    
+    if (!reportData.reporter.trim()) {
+      newErrors.reporter = "Reporter name / organization is required.";
+    } else if (reportData.reporter.trim().length < 2) {
+      newErrors.reporter = "Reporter identity must be at least 2 characters.";
+    }
+    
+    return newErrors;
+  };
+
+  const handleReportSubmit = async (e) => {
     e.preventDefault();
-    if (!reportData.title || !reportData.lat || !reportData.lng) {
-      alert("Please fill out the title and ensure coordinates are selected on the map.");
+    const formErrors = validateForm();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
       return;
     }
 
-    const newEvent = {
-      id: "evt-" + Math.floor(100 + Math.random() * 900),
-      title: reportData.title,
-      category: reportData.category,
-      description: reportData.description,
-      locationName: reportData.locationName || "Selected Coordinates",
-      lat: parseFloat(reportData.lat),
-      lng: parseFloat(reportData.lng),
-      date: reportData.date || new Date().toISOString().split('T')[0],
-      time: reportData.time || "12:00 PM",
-      reporter: reportData.reporter,
-      verified: false, // Default is pending verification
-      evidenceFile: null
+    const payload = {
+      name: reportData.title,
+      eventType: reportData.category,
+      date: reportData.date,
+      locationLat: parseFloat(reportData.lat),
+      locationLng: parseFloat(reportData.lng),
+      organizer: reportData.reporter,
+      description: reportData.description
     };
 
-    setEvents([newEvent, ...events]);
-    setSelectedEvent(newEvent);
-    setShowReportForm(false);
-    setReportData({
-      title: "",
-      category: "Public Audit",
-      description: "",
-      locationName: "",
-      lat: "",
-      lng: "",
-      date: "",
-      time: "",
-      reporter: "Pritam Rai"
-    });
-
-    alert("Thank you! Your civic watchdog activity has been reported as pending verification.");
+    setLoading(true);
+    try {
+      const response = await civicEventsAPI.report(payload);
+      const newEvt = mapBackendEventToFrontend(response.event || response);
+      
+      const updatedEvents = [newEvt, ...events];
+      setEvents(updatedEvents);
+      localStorage.setItem('nirikshan_civic_events', JSON.stringify(updatedEvents));
+      
+      setSelectedEvent(newEvt);
+      setShowReportForm(false);
+      setErrors({});
+      setReportData({
+        title: "",
+        category: "Public Audit",
+        description: "",
+        locationName: "",
+        lat: "",
+        lng: "",
+        date: "",
+        time: "",
+        reporter: "Pritam Rai"
+      });
+      alert(response.message || "Thank you! Your civic watchdog activity has been reported as pending verification.");
+    } catch (err) {
+      console.error("Failed to submit civic event:", err);
+      alert(err.response?.data?.error || "Failed to submit civic event. Please check if you are logged in.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -442,19 +545,26 @@ export default function CivicMap() {
                 </button>
               </div>
 
-              <form onSubmit={handleReportSubmit} className="space-y-4 text-xs">
+              <form onSubmit={handleReportSubmit} noValidate className="space-y-4 text-xs">
+                {errors.latLng && (
+                  <div className="bg-charred-brick/10 border border-charred-brick/30 text-charred-brick p-2.5 text-xs font-sans rounded-sm flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-charred-brick" />
+                    <strong>Map Coordinate Error:</strong> {errors.latLng}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block font-semibold uppercase tracking-wider text-slate-basalt/80 mb-1.5">Event Title</label>
                     <input
                       type="text"
                       name="title"
-                      required
                       placeholder="e.g. Ring Road Waste Collection Compliance Check"
                       value={reportData.title}
                       onChange={handleFormChange}
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 focus:outline-none focus:border-temple-brass text-xs"
+                      className={`w-full bg-himalayan-mist border p-2.5 focus:outline-none focus:border-temple-brass text-xs ${errors.title ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.title && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.title}</p>}
                   </div>
 
                   <div>
@@ -491,8 +601,9 @@ export default function CivicMap() {
                       placeholder="e.g. Kalanki Ward 14, Kathmandu"
                       value={reportData.locationName}
                       onChange={handleFormChange}
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 focus:outline-none focus:border-temple-brass text-xs"
+                      className={`w-full bg-himalayan-mist border p-2.5 focus:outline-none focus:border-temple-brass text-xs ${errors.locationName ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.locationName && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.locationName}</p>}
                   </div>
 
                   <div>
@@ -500,7 +611,6 @@ export default function CivicMap() {
                     <input
                       type="text"
                       name="lat"
-                      required
                       readOnly
                       placeholder="Click on map"
                       value={reportData.lat}
@@ -513,7 +623,6 @@ export default function CivicMap() {
                     <input
                       type="text"
                       name="lng"
-                      required
                       readOnly
                       placeholder="Click on map"
                       value={reportData.lng}
@@ -530,8 +639,9 @@ export default function CivicMap() {
                       name="date"
                       value={reportData.date}
                       onChange={handleFormChange}
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 focus:outline-none focus:border-temple-brass text-xs"
+                      className={`w-full bg-himalayan-mist border p-2.5 focus:outline-none focus:border-temple-brass text-xs ${errors.date ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.date && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.date}</p>}
                   </div>
 
                   <div>
@@ -553,8 +663,9 @@ export default function CivicMap() {
                       name="reporter"
                       value={reportData.reporter}
                       onChange={handleFormChange}
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 focus:outline-none focus:border-temple-brass text-xs"
+                      className={`w-full bg-himalayan-mist border p-2.5 focus:outline-none focus:border-temple-brass text-xs ${errors.reporter ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.reporter && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.reporter}</p>}
                   </div>
                 </div>
 

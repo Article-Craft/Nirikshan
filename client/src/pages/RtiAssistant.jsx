@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { jsPDF } from 'jspdf';
+import { rtiAPI } from '../api';
 import { 
   FileText, 
   Layers, 
@@ -32,7 +34,7 @@ const DEPARTMENTS = [
   "Other / Custom Office"
 ];
 
-// Initial mock tracked requests
+// Initial offline/mock requests in case backend fails or during initialization
 const INITIAL_REQUESTS = [
   {
     id: "rti-101",
@@ -43,7 +45,7 @@ const INITIAL_REQUESTS = [
     applicantName: "Pritam Rai",
     applicantAddress: "Kapan, Kathmandu",
     applicantPhone: "9841XXXXXX",
-    submissionDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 5 days ago (30 days left)
+    submittedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 5 days ago (30 days left)
     status: "submitted",
     details: "Seeking detailed financial breakdown, signed contracts, and penalty terms for contractor delays on the Kalanki-Maharajgunj section of Ring Road expansion."
   },
@@ -56,8 +58,8 @@ const INITIAL_REQUESTS = [
     applicantName: "Pritam Rai",
     applicantAddress: "Kapan, Kathmandu",
     applicantPhone: "9841XXXXXX",
-    submissionDate: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 18 days ago (17 days left)
-    status: "in_progress",
+    submittedDate: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 18 days ago (17 days left)
+    status: "processing",
     details: "Request for tender documents, list of bidding suppliers, and actual delivery log of paracetamol and essential saline supplies to provincial government hospitals."
   },
   {
@@ -69,8 +71,8 @@ const INITIAL_REQUESTS = [
     applicantName: "Pritam Rai",
     applicantAddress: "Kapan, Kathmandu",
     applicantPhone: "9841XXXXXX",
-    submissionDate: new Date(Date.now() - 32 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 32 days ago (3 days left)
-    status: "delayed",
+    submittedDate: new Date(Date.now() - 32 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 32 days ago (3 days left)
+    status: "appealed",
     details: "Seeking quarterly biochemical water quality report from Melamchi project distribution tanks and municipal budget utilized for regional water purification tablets."
   }
 ];
@@ -78,10 +80,10 @@ const INITIAL_REQUESTS = [
 export default function RtiAssistant() {
   const [activeTab, setActiveTab] = useState('wizard'); // 'wizard' or 'tracker'
   const [step, setStep] = useState(1);
-  const [trackedRequests, setTrackedRequests] = useState(() => {
-    const saved = localStorage.getItem('nirikshan_rti_requests');
-    return saved ? JSON.parse(saved) : INITIAL_REQUESTS;
-  });
+  const [trackedRequests, setTrackedRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [errors, setErrors] = useState({});
 
   // Wizard State
   const [wizardData, setWizardData] = useState({
@@ -104,8 +106,34 @@ export default function RtiAssistant() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [simulationDays, setSimulationDays] = useState({}); // allows custom offset simulation per request
 
+  // Load from backend API
+  const fetchMyRequests = async () => {
+    setLoadingRequests(true);
+    setErrorMessage(null);
+    try {
+      const data = await rtiAPI.getMine();
+      setTrackedRequests(data);
+    } catch (err) {
+      console.error("Error fetching RTI requests:", err);
+      // Fallback to local storage or defaults if offline
+      const saved = localStorage.getItem('nirikshan_rti_requests');
+      const offlineData = saved ? JSON.parse(saved) : INITIAL_REQUESTS;
+      setTrackedRequests(offlineData);
+      setErrorMessage("Showing cached/offline RTI requests as backend is currently unreachable.");
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('nirikshan_rti_requests', JSON.stringify(trackedRequests));
+    fetchMyRequests();
+  }, []);
+
+  // Save to local storage as fallback when requests change
+  useEffect(() => {
+    if (trackedRequests.length > 0) {
+      localStorage.setItem('nirikshan_rti_requests', JSON.stringify(trackedRequests));
+    }
   }, [trackedRequests]);
 
   const handleWizardChange = (e) => {
@@ -114,6 +142,13 @@ export default function RtiAssistant() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    if (errors[name]) {
+      setErrors(prev => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
+    }
   };
 
   const getOfficeName = () => {
@@ -139,42 +174,143 @@ export default function RtiAssistant() {
       addSignaturePlaceholder: true,
     });
     setStep(1);
+    setErrors({});
   };
 
-  const handleGenerateAndTrack = () => {
-    const newRequest = {
-      id: "rti-" + Math.floor(1000 + Math.random() * 9000),
-      subject: wizardData.subject || "General Information Request",
-      department: getOfficeName(),
-      address: wizardData.address,
-      officerName: wizardData.officerName,
-      applicantName: wizardData.applicantName,
-      applicantAddress: wizardData.applicantAddress,
-      applicantPhone: wizardData.applicantPhone,
-      submissionDate: new Date().toISOString().split('T')[0],
-      status: "submitted",
-      details: wizardData.description || "Seeking government records under Article 27 of the Constitution of Nepal."
+  const validateStep = (stepNum) => {
+    const stepErrors = {};
+    if (stepNum === 1) {
+      if (wizardData.department === "Other / Custom Office" && !wizardData.customDepartment.trim()) {
+        stepErrors.customDepartment = "Please specify the custom office name.";
+      }
+      if (!wizardData.address.trim()) {
+        stepErrors.address = "Office address is required.";
+      } else if (wizardData.address.trim().length < 3) {
+        stepErrors.address = "Address must be at least 3 characters.";
+      }
+      if (!wizardData.officerName.trim()) {
+        stepErrors.officerName = "Officer designation is required.";
+      } else if (wizardData.officerName.trim().length < 2) {
+        stepErrors.officerName = "Officer designation must be at least 2 characters.";
+      }
+    }
+    if (stepNum === 2) {
+      if (!wizardData.subject.trim()) {
+        stepErrors.subject = "Subject/Title is required.";
+      } else if (wizardData.subject.trim().length < 3) {
+        stepErrors.subject = "Subject must be at least 3 characters.";
+      }
+      if (!wizardData.description.trim()) {
+        stepErrors.description = "Specific details of information requested are required.";
+      } else if (wizardData.description.trim().length < 10) {
+        stepErrors.description = "Please describe the request in at least 10 characters.";
+      }
+    }
+    if (stepNum === 3) {
+      if (!wizardData.applicantName.trim()) {
+        stepErrors.applicantName = "Applicant name is required.";
+      } else if (wizardData.applicantName.trim().length < 2) {
+        stepErrors.applicantName = "Applicant name must be at least 2 characters.";
+      }
+      if (!wizardData.applicantAddress.trim()) {
+        stepErrors.applicantAddress = "Permanent address is required.";
+      } else if (wizardData.applicantAddress.trim().length < 3) {
+        stepErrors.applicantAddress = "Address must be at least 3 characters.";
+      }
+      if (!wizardData.applicantEmail.trim()) {
+        stepErrors.applicantEmail = "Email address is required.";
+      } else if (!/\S+@\S+\.\S+/.test(wizardData.applicantEmail)) {
+        stepErrors.applicantEmail = "Please enter a valid email address.";
+      }
+      if (!wizardData.applicantPhone.trim()) {
+        stepErrors.applicantPhone = "Phone number is required.";
+      } else if (!/^\+?[0-9\s-]{7,15}$/.test(wizardData.applicantPhone)) {
+        stepErrors.applicantPhone = "Please enter a valid phone number.";
+      }
+    }
+    return stepErrors;
+  };
+
+  const handleContinue = () => {
+    const stepErrors = validateStep(step);
+    if (Object.keys(stepErrors).length > 0) {
+      setErrors(stepErrors);
+    } else {
+      setErrors({});
+      setStep(s => s + 1);
+    }
+  };
+
+  const handleGenerateAndTrack = async () => {
+    // Validate all steps first
+    const step1Errors = validateStep(1);
+    const step2Errors = validateStep(2);
+    const step3Errors = validateStep(3);
+    const allErrors = { ...step1Errors, ...step2Errors, ...step3Errors };
+    if (Object.keys(allErrors).length > 0) {
+      setErrors(allErrors);
+      if (Object.keys(step1Errors).length > 0) setStep(1);
+      else if (Object.keys(step2Errors).length > 0) setStep(2);
+      else if (Object.keys(step3Errors).length > 0) setStep(3);
+      return;
+    }
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    const letter = `दर्ता नं: .................... मिति: ${dateStr}\n\nश्रीमान् ${wizardData.officerName || "सूचना अधिकारी ज्यू"},\n${getOfficeName()}\n${wizardData.address || ""}\n\nविषय: सूचना माग गरिएको सम्बन्धमा ।\n\nप्रस्तुत विषयमा, नेपालको संविधानको धारा २७ (सूचनाको हक सम्बन्धी हक) र सूचनाको हक सम्बन्धी ऐन, २०६४ को दफा ३ बमोजिम म निम्न बमोजिमका सूचना उपलब्ध गराई पाउन यो निवेदन पेश गर्दछु ।\n\nमाग गरिएको सूचनाको विवरण:\n${wizardData.description}\n\nमाग गरिएको सूचना ${wizardData.format} को रूपमा उपलब्ध गराइदिनुहुन अनुरोध गर्दछु । यसका लागि लाग्ने आवश्यक प्रतिलिपि दस्तुर म नियमानुसार बुझाउन तयार छु ।\n\nनिवेदकको विवरण:\nनाम: ${wizardData.applicantName}\nठेगाना: ${wizardData.applicantAddress}\nसम्पर्क नं: ${wizardData.applicantPhone}\n${wizardData.citizenshipNo ? `ना.प्र.नं: ${wizardData.citizenshipNo}` : ''}`;
+
+    const deadline = new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const payload = {
+      subject: wizardData.subject,
+      targetOffice: getOfficeName(),
+      letterContent: letter,
+      deadlineDate: deadline
     };
 
-    setTrackedRequests([newRequest, ...trackedRequests]);
-    setActiveTab('tracker');
-    setSelectedRequest(newRequest);
-    alert("Official RTI request letter drafted successfully and added to your tracked requests dashboard.");
+    setLoadingRequests(true);
+    try {
+      const response = await rtiAPI.submit(payload);
+      await fetchMyRequests();
+      setActiveTab('tracker');
+      setSelectedRequest(response);
+      resetWizard();
+      alert("Official RTI request letter drafted, posted to backend, and added to your tracked requests dashboard successfully.");
+    } catch (err) {
+      console.error("Failed to submit RTI request:", err);
+      alert(err.response?.data?.error || "Failed to submit RTI request to the server.");
+    } finally {
+      setLoadingRequests(false);
+    }
   };
 
-  // 35-Day Deadline calculations
+  // 35-Day Deadline calculations from backend values
   const getDeadlineStats = (req) => {
-    const submission = new Date(req.submissionDate);
-    const simulatedOffset = simulationDays[req.id] || 0;
+    const subDateVal = req.submittedDate || req.submitted_date || req.createdAt;
+    const submission = subDateVal ? new Date(subDateVal) : new Date();
     
+    const simulatedOffset = simulationDays[req.id] || 0;
     // Add offset days to submission date to simulate passing of time
     const adjustedSubmission = new Date(submission.getTime() - (simulatedOffset * 24 * 60 * 60 * 1000));
     
     const today = new Date();
-    const diffTime = today.getTime() - adjustedSubmission.getTime();
-    const daysElapsed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    const totalDuration = 35;
+    const deadDateVal = req.deadlineDate || req.deadline_date;
+    let deadline;
+    if (deadDateVal) {
+      deadline = new Date(deadDateVal);
+    } else {
+      deadline = new Date(submission.getTime() + 35 * 24 * 60 * 60 * 1000);
+    }
+    
+    // Total duration in days between submission and deadline
+    const totalDurationMs = deadline.getTime() - submission.getTime();
+    const totalDuration = Math.max(1, Math.round(totalDurationMs / (1000 * 60 * 60 * 24)));
+    
+    // Days elapsed since adjusted submission
+    const diffTime = today.getTime() - adjustedSubmission.getTime();
+    const daysElapsed = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+    
+    // Days remaining till deadline
     const daysRemaining = Math.max(0, totalDuration - daysElapsed);
     const percentageRemaining = Math.max(0, (daysRemaining / totalDuration) * 100);
     const percentageElapsed = 100 - percentageRemaining;
@@ -220,8 +356,61 @@ export default function RtiAssistant() {
     window.print();
   };
 
+  const downloadPdfFile = () => {
+    const doc = new jsPDF();
+    const dateStr = new Date().toISOString().split('T')[0];
+    
+    doc.setFont("Helvetica");
+    doc.setFontSize(12);
+    
+    doc.text(`Date: ${dateStr}`, 150, 20);
+    
+    doc.setFont("Helvetica", "bold");
+    doc.text("To,", 20, 35);
+    doc.text(`The Information Officer`, 20, 42);
+    doc.text(`${getOfficeName()}`, 20, 49);
+    doc.text(`${wizardData.address}`, 20, 56);
+    
+    doc.text("Subject: Request for Information under Right to Information (RTI) Act 2064", 20, 70);
+    
+    doc.setFont("Helvetica", "normal");
+    const introText = "Pursuant to Article 27 of the Constitution of Nepal and Section 3 of the Right to Information Act 2064, I hereby demand the following official information records from your office:";
+    const splitIntro = doc.splitTextToSize(introText, 170);
+    doc.text(splitIntro, 20, 80);
+    
+    doc.setFont("Helvetica", "bold");
+    doc.text("Details of Information Required:", 20, 100);
+    doc.setFont("Helvetica", "normal");
+    const details = wizardData.description || "Seeking details of public expenditure and project compliance.";
+    const splitDetails = doc.splitTextToSize(details, 170);
+    doc.text(splitDetails, 20, 107);
+    
+    const formatText = `Preferred Information Format: ${wizardData.format}. I am willing to pay any official copy fees as per the rules.`;
+    const splitFormat = doc.splitTextToSize(formatText, 170);
+    doc.text(splitFormat, 20, 150);
+    
+    doc.setFont("Helvetica", "bold");
+    doc.text("Applicant Information:", 20, 170);
+    doc.setFont("Helvetica", "normal");
+    doc.text(`Full Name: ${wizardData.applicantName}`, 20, 177);
+    doc.text(`Address: ${wizardData.applicantAddress}`, 20, 184);
+    doc.text(`Phone No: ${wizardData.applicantPhone}`, 20, 191);
+    doc.text(`Email: ${wizardData.applicantEmail}`, 20, 198);
+    if (wizardData.citizenshipNo) {
+      doc.text(`Citizenship Number: ${wizardData.citizenshipNo}`, 20, 205);
+    }
+    
+    if (wizardData.addSignaturePlaceholder) {
+      doc.line(130, 225, 185, 225);
+      doc.text("Applicant Signature", 140, 231);
+    }
+    
+    doc.save(`RTI_Request_${dateStr}.pdf`);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 font-sans">
+
       
       {/* Header section */}
       <div className="border-b border-dust-beige/60 pb-6 mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -330,8 +519,9 @@ export default function RtiAssistant() {
                         placeholder="e.g. Ward Office 3, Lalitpur Metropolitan"
                         value={wizardData.customDepartment}
                         onChange={handleWizardChange}
-                        className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass"
+                        className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass ${errors.customDepartment ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                       />
+                      {errors.customDepartment && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.customDepartment}</p>}
                     </div>
                   )}
 
@@ -345,8 +535,9 @@ export default function RtiAssistant() {
                       value={wizardData.address}
                       onChange={handleWizardChange}
                       placeholder="Singha Durbar, Kathmandu"
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass"
+                      className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass ${errors.address ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.address && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.address}</p>}
                   </div>
 
                   <div>
@@ -359,8 +550,9 @@ export default function RtiAssistant() {
                       value={wizardData.officerName}
                       onChange={handleWizardChange}
                       placeholder="e.g. Information Officer (सूचना अधिकारी)"
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass"
+                      className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass ${errors.officerName ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.officerName && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.officerName}</p>}
                   </div>
                 </div>
               )}
@@ -381,8 +573,9 @@ export default function RtiAssistant() {
                       value={wizardData.subject}
                       onChange={handleWizardChange}
                       placeholder="e.g., Budget allocations and contract copy for local park cleanup"
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass"
+                      className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass ${errors.subject ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.subject && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.subject}</p>}
                   </div>
 
                   <div>
@@ -395,8 +588,9 @@ export default function RtiAssistant() {
                       value={wizardData.description}
                       onChange={handleWizardChange}
                       placeholder="Please list the specific files, receipts, timelines, or reports you are requesting. Mention dates if possible (e.g. fiscal year 2080/81)."
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass font-serif leading-relaxed"
+                      className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass font-serif leading-relaxed ${errors.description ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.description && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.description}</p>}
                   </div>
 
                   <div>
@@ -435,8 +629,9 @@ export default function RtiAssistant() {
                         value={wizardData.applicantName}
                         onChange={handleWizardChange}
                         placeholder="Pritam Rai"
-                        className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass"
+                        className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass ${errors.applicantName ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                       />
+                      {errors.applicantName && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.applicantName}</p>}
                     </div>
 
                     <div>
@@ -464,8 +659,9 @@ export default function RtiAssistant() {
                       value={wizardData.applicantAddress}
                       onChange={handleWizardChange}
                       placeholder="e.g. Budhanilkantha-4, Kathmandu"
-                      className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass"
+                      className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass ${errors.applicantAddress ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                     />
+                    {errors.applicantAddress && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.applicantAddress}</p>}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -478,8 +674,9 @@ export default function RtiAssistant() {
                         name="applicantEmail"
                         value={wizardData.applicantEmail}
                         onChange={handleWizardChange}
-                        className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass"
+                        className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass ${errors.applicantEmail ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                       />
+                      {errors.applicantEmail && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.applicantEmail}</p>}
                     </div>
 
                     <div>
@@ -491,8 +688,9 @@ export default function RtiAssistant() {
                         name="applicantPhone"
                         value={wizardData.applicantPhone}
                         onChange={handleWizardChange}
-                        className="w-full bg-himalayan-mist border border-dust-beige p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass"
+                        className={`w-full bg-himalayan-mist border p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass ${errors.applicantPhone ? 'border-charred-brick ring-1 ring-charred-brick/20' : 'border-dust-beige'}`}
                       />
+                      {errors.applicantPhone && <p className="text-charred-brick text-xs mt-1 font-semibold">{errors.applicantPhone}</p>}
                     </div>
                   </div>
 
@@ -561,7 +759,7 @@ export default function RtiAssistant() {
 
               {step < 4 ? (
                 <button
-                  onClick={() => setStep(s => s + 1)}
+                  onClick={handleContinue}
                   className="bg-pagoda-wood text-himalayan-mist px-6 py-2.5 text-xs uppercase tracking-widest font-semibold hover:bg-temple-brass hover:text-pagoda-wood transition-all duration-300 shadow-sm rounded-sm"
                 >
                   Continue
@@ -569,11 +767,11 @@ export default function RtiAssistant() {
               ) : (
                 <div className="flex gap-2">
                   <button
-                    onClick={triggerPrint}
+                    onClick={downloadPdfFile}
                     className="px-4 py-2.5 border border-pagoda-wood text-pagoda-wood text-xs uppercase tracking-wider font-semibold hover:bg-weather-stone transition-all duration-200 rounded-sm flex items-center gap-1.5"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    Print PDF
+                    Download PDF
                   </button>
                   <button
                     onClick={handleGenerateAndTrack}

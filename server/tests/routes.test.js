@@ -132,3 +132,79 @@ describe('Representatives Endpoints', () => {
     expect(res.body.rating.stars).toBe(5);
   });
 });
+
+describe('RTI Requests Endpoints', () => {
+  it('should submit a new RTI request when authenticated', async () => {
+    const res = await request(app)
+      .post('/api/rti-requests')
+      .set('Authorization', `Bearer ${citizenToken}`)
+      .send({
+        subject: 'Local Road Budget Allocation Inquiry',
+        targetOffice: 'Ministry of Physical Infrastructure',
+        letterContent: 'This is a test letter demanding road audit reports under Section 6(1) of RTI Act 2064.',
+        deadlineDate: '2026-08-10'
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveProperty('id');
+    expect(res.body.subject).toBe('Local Road Budget Allocation Inquiry');
+    expect(res.body.targetOffice).toBe('Ministry of Physical Infrastructure');
+  });
+
+  it('should get mine RTI requests when authenticated', async () => {
+    const res = await request(app)
+      .get('/api/rti-requests/mine')
+      .set('Authorization', `Bearer ${citizenToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body[0].subject).toBe('Local Road Budget Allocation Inquiry');
+  });
+});
+
+describe('Civic Events Endpoints & Moderation', () => {
+  let tempEventId;
+
+  it('should submit a civic event, which defaults to unverified', async () => {
+    const res = await request(app)
+      .post('/api/civic-events')
+      .set('Authorization', `Bearer ${citizenToken}`)
+      .send({
+        name: 'Community Forest Fire Inspection',
+        eventType: 'Watchdog Inspection',
+        date: '2026-07-22',
+        locationLat: 27.8105,
+        locationLng: 85.4010,
+        organizer: 'Citizen Forest Watch',
+        description: 'Citizen audit of tree plantation and fire safety parameters.'
+      });
+
+    expect(res.status).toBe(202);
+    expect(res.body.event.verified).toBe(false);
+    tempEventId = res.body.event.id;
+  });
+
+  it('should not return the unverified civic event in public list', async () => {
+    const res = await request(app).get('/api/civic-events');
+    expect(res.status).toBe(200);
+    const found = res.body.find(e => e.id === tempEventId);
+    expect(found).toBeUndefined();
+  });
+
+  it('should allow admin/moderator to approve the civic event from moderation queue', async () => {
+    const res = await request(app)
+      .post(`/api/moderation/event-${tempEventId}/approve`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('approved and verified successfully');
+  });
+
+  it('should return the approved civic event in public list', async () => {
+    const res = await request(app).get('/api/civic-events');
+    expect(res.status).toBe(200);
+    const found = res.body.find(e => e.id === tempEventId);
+    expect(found).toBeDefined();
+    expect(found.verified).toBe(true);
+  });
+});

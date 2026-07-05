@@ -52,6 +52,22 @@ export const representativesAPI = {
   getById: (id) => api.get(`/representatives/${id}`).then(res => res.data),
   submitRating: (id, data) => api.post(`/representatives/${id}/rating`, data).then(res => res.data),
 };
+
+// RTI Assistant — POST /api/rti-requests (Auth required)
+//   payload: { subject, targetOffice, letterContent, deadlineDate? }
+// GET /api/rti-requests/mine (Auth required) — returns user's requests
+export const rtiAPI = {
+  submit: (data) => api.post('/rti-requests', data).then(res => res.data),
+  getMine: () => api.get('/rti-requests/mine').then(res => res.data),
+};
+
+// Civic Events — GET /api/civic-events (public, verified only)
+//   POST /api/civic-events (Auth required)
+//   payload: { name, eventType, date, locationLat?, locationLng?, organizer, description? }
+//   submitted events are unverified (verified: false) and enter moderation queue
+export const civicEventsAPI = {
+  getAll: () => api.get('/civic-events').then(res => res.data),
+  report: (data) => api.post('/civic-events', data).then(res => res.data),
 };
 
 export default api;

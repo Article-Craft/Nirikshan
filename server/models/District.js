@@ -34,6 +34,25 @@ const District = sequelize.define('District', {
     type: DataTypes.STRING,
     field: 'dao_office_hours',
     allowNull: true
+  },
+  population: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  municipalityCount: {
+    type: DataTypes.INTEGER,
+    field: 'municipality_count',
+    allowNull: true
+  },
+  publicNotices: {
+    type: DataTypes.TEXT,
+    field: 'public_notices',
+    allowNull: true
+  },
+  citizenReports: {
+    type: DataTypes.TEXT,
+    field: 'citizen_reports',
+    allowNull: true
   }
 }, {
   tableName: 'districts'

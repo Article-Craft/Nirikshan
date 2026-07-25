@@ -246,6 +246,7 @@ async function seedAll() {
     console.log('Demo accounts seeded.');
 
     // 2. Seed Districts
+    // Official datasets containing CDO appointments, websites, and contacts
     const verifiedDistricts = {
       'KATHMANDU': {
         cdoName: 'Ishwar Raj Paudel',

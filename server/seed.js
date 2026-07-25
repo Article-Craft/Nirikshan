@@ -210,16 +210,88 @@ async function seed() {
     console.log('Database synced (tables recreated).');
 
     // 1. Seed Districts
+    const verifiedDistricts = {
+      'Kathmandu': {
+        cdoName: 'Eshwor Raj Poudel',
+        daoAddress: 'Babarmahal, Kathmandu',
+        daoContact: '+977-01-5361280',
+        daoOfficeHours: '10:00 AM - 5:00 PM',
+        population: 2041587,
+        municipalityCount: 11,
+        publicNotices: JSON.stringify([
+          { id: 1, date: '2026-07-20', title: 'Traffic re-routing in Babarmahal area due to road maintenance.', severity: 'medium' },
+          { id: 2, date: '2026-07-22', title: 'Public holiday notice for local administrative offices on upcoming festival.', severity: 'low' }
+        ]),
+        citizenReports: JSON.stringify([
+          { id: 101, title: 'Road damage near Koteshwor', category: 'Infrastructure', status: 'verified', description: 'Deep potholes on the main highway are causing traffic congestion and risk of accidents.' },
+          { id: 102, title: 'Unmanaged garbage pile-up in Baneshwor', category: 'Waste Management', status: 'pending', description: 'Waste has not been collected for the last 5 days.' }
+        ])
+      },
+      'Lalitpur': {
+        cdoName: 'Narhari Ghimire',
+        daoAddress: 'Pulchowk, Lalitpur',
+        daoContact: '+977-01-5521207',
+        daoOfficeHours: '10:00 AM - 5:00 PM',
+        population: 394066,
+        municipalityCount: 6,
+        publicNotices: JSON.stringify([
+          { id: 1, date: '2026-07-18', title: 'Administrative service hours extended for National ID card distributions.', severity: 'low' }
+        ]),
+        citizenReports: JSON.stringify([
+          { id: 103, title: 'Water supply leakage in Patan', category: 'Water Supply', status: 'verified', description: 'Main pipe burst near Patan Durbar Square, clean water is leaking onto the streets.' }
+        ])
+      },
+      'Bhaktapur': {
+        cdoName: 'Binod Kumar Khadka',
+        daoAddress: 'Kamalbinayak, Bhaktapur',
+        daoContact: '+977-01-6610022',
+        daoOfficeHours: '10:00 AM - 5:00 PM',
+        population: 430408,
+        municipalityCount: 4,
+        publicNotices: JSON.stringify([]),
+        citizenReports: JSON.stringify([])
+      },
+      'Kaski': {
+        population: 491950,
+        municipalityCount: 5,
+        publicNotices: JSON.stringify([]),
+        citizenReports: JSON.stringify([])
+      },
+      'Jhapa': {
+        population: 994090,
+        municipalityCount: 15,
+        publicNotices: JSON.stringify([]),
+        citizenReports: JSON.stringify([])
+      },
+      'Morang': {
+        population: 1147186,
+        municipalityCount: 17,
+        publicNotices: JSON.stringify([]),
+        citizenReports: JSON.stringify([])
+      },
+      'Chitwan': {
+        population: 722800,
+        municipalityCount: 7,
+        publicNotices: JSON.stringify([]),
+        citizenReports: JSON.stringify([])
+      }
+    };
+
     const districtMap = new Map();
     for (const prov of nepalData) {
       for (const distName of prov.districts) {
+        const verified = verifiedDistricts[distName] || {};
         const district = await District.create({
           name: distName,
           province: prov.province,
-          cdoName: `CDO of ${distName}`,
-          daoAddress: `District Administration Office, ${distName} HQ, Nepal`,
-          daoContact: `+977-0${distName.length}-500000`,
-          daoOfficeHours: '10:00 AM - 5:00 PM'
+          cdoName: verified.cdoName || null,
+          daoAddress: verified.daoAddress || null,
+          daoContact: verified.daoContact || null,
+          daoOfficeHours: verified.daoOfficeHours || null,
+          population: verified.population || null,
+          municipalityCount: verified.municipalityCount || null,
+          publicNotices: verified.publicNotices || null,
+          citizenReports: verified.citizenReports || null
         });
         districtMap.set(distName.toUpperCase(), district.id);
       }

@@ -228,6 +228,7 @@ export default function RepresentativeReportCard() {
     });
   };
 
+  // Aggregate campaign pledges counts dynamically from API records
   const stats = {
     total:     promises.length,
     fulfilled: promises.filter(p => p.status === 'fulfilled').length,

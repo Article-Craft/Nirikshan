@@ -84,6 +84,7 @@ export default function LandingPage({ setUser }) {
   }, []);
 
   // Initialize Map
+  // Sets up the Leaflet Map instance on the designated DOM node reference
   useEffect(() => {
     if (!mapRef.current || mapLoading || !geoJsonData) return;
 

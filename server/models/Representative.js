@@ -1,3 +1,7 @@
+/**
+ * Representative Model representing elected politicians in Nepal.
+ * Stores attendance, asset declarations, tenure, and verified pledge metrics.
+ */
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 

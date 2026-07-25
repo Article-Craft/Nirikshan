@@ -160,6 +160,7 @@ export default function InteractiveMap() {
       map.removeLayer(geojsonLayerRef.current);
     }
 
+    // Calculates feature fill colors dynamically based on Province borders
     const getStyle = (feature) => {
       const distName = feature.properties.DISTRICT || feature.properties.name || '';
       const norm = normalizeName(distName);

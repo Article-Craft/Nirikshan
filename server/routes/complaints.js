@@ -17,9 +17,38 @@ const createComplaintSchema = z.object({
 // GET /api/complaints
 router.get('/', async (req, res) => {
   try {
-    // Public feed shows only verified complaints
+    const { serviceType, status, startDate, endDate } = req.query;
+    const { Op } = require('sequelize');
+    const where = {};
+
+    // Filter by status (defaulting to 'verified' if not provided)
+    if (status && status !== 'all') {
+      where.status = status;
+    } else if (!status) {
+      where.status = 'verified';
+    }
+
+    // Filter by service type
+    if (serviceType && serviceType !== 'all') {
+      where.serviceType = serviceType;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt[Op.gte] = new Date(startDate);
+      }
+      if (endDate) {
+        // To make the endDate inclusive of the entire day, set it to the end of that day (23:59:59)
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt[Op.lte] = end;
+      }
+    }
+
     const complaints = await Complaint.findAll({
-      where: { status: 'verified' },
+      where,
       order: [['created_at', 'DESC']]
     });
     res.json(complaints);

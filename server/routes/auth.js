@@ -11,13 +11,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'nirikshan_fallback_secret';
 // Input validation schemas
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').transform(val => val.toLowerCase()),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   role: z.enum(['citizen', 'moderator', 'admin']).optional()
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').transform(val => val.toLowerCase()),
   password: z.string().min(1, 'Password is required')
 });
 

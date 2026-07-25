@@ -3,15 +3,15 @@ import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { districtsAPI, constituenciesAPI, representativesAPI } from '../api';
-import { Search, MapPin, Phone, Mail, Award, ArrowRight, User, Vote, Landmark } from 'lucide-react';
+import { Search, MapPin, Phone, Mail, Award, ArrowRight, User, Landmark, Building, Globe, AlertCircle } from 'lucide-react';
 
 export const PARTIES = {
-  'NC': { name: 'Nepali Congress', short: 'NC', color: '#4F6B45', text: 'white' }, // Rhododendron Leaf Green
-  'UML': { name: 'CPN (Unified Marxist–Leninist)', short: 'CPN-UML', color: '#6E4438', text: 'white' }, // Charred Brick Red
-  'MC': { name: 'CPN (Maoist Centre)', short: 'CPN-MC', color: '#8C6A32', text: 'white' }, // Turmeric Clay Orange/Red
-  'RSP': { name: 'Rastriya Swatantra Party', short: 'RSP', color: '#1E40AF', text: 'white' }, // Bell Blue
-  'RPP': { name: 'Rastriya Prajatantra Party', short: 'RPP', color: '#D97706', text: 'black' }, // Golden Yellow
-  'IND': { name: 'Independent / Others', short: 'IND', color: '#6B7280', text: 'white' } // Slate Grey
+  'NC': { name: 'Nepali Congress', short: 'NC', color: '#1E3A8A', text: 'white' },
+  'CPN (UML)': { name: 'CPN (UML)', short: 'UML', color: '#DC2626', text: 'white' },
+  'RSP': { name: 'Rastriya Swatantra Party', short: 'RSP', color: '#2563EB', text: 'white' },
+  'CPN (Maoist Centre)': { name: 'CPN (Maoist Centre)', short: 'MC', color: '#991B1B', text: 'white' },
+  'RPP': { name: 'Rastriya Prajatantra Party', short: 'RPP', color: '#D97706', text: 'white' },
+  'Independent': { name: 'Independent', short: 'IND', color: '#4B5563', text: 'white' }
 };
 
 const normalizeName = (name) => {
@@ -33,8 +33,6 @@ export default function InteractiveMap() {
   const [selectedConstituencyId, setSelectedConstituencyId] = useState(null);
   const [hoveredFeatureName, setHoveredFeatureName] = useState(null);
   const [geoJsonData, setGeoJsonData] = useState(null);
-  const [districtsList, setDistrictsList] = useState([]);
-  const [constituenciesList, setConstituenciesList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Real data state
@@ -85,19 +83,27 @@ export default function InteractiveMap() {
         id: district.id,
         name: district.name,
         province: district.province,
+        headquarters: district.headquarters,
+        areaSqKm: district.areaSqKm,
         population: district.population,
-        municipalityCount: district.municipalityCount,
         publicNotices: district.publicNotices ? JSON.parse(district.publicNotices) : [],
         citizenReports: district.citizenReports ? JSON.parse(district.citizenReports) : [],
         cdo: {
           name: hasCdo ? district.cdoName : 'Data Unavailable',
+          assistant: hasCdo ? (district.assistantCdo || 'Data Unavailable') : 'Data Unavailable',
           phone: hasCdo ? (district.daoContact || 'Data Unavailable') : 'Data Unavailable',
-          email: hasCdo ? `cdo.${district.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@moha.gov.np` : 'Data Unavailable',
+          email: hasCdo ? (district.daoEmail || `cdo.${district.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@moha.gov.np`) : 'Data Unavailable',
+          website: hasCdo ? (district.daoWebsite || 'Data Unavailable') : 'Data Unavailable',
           office: hasCdo ? (district.daoAddress || 'Data Unavailable') : 'Data Unavailable',
           officeHours: hasCdo ? (district.daoOfficeHours || 'Data Unavailable') : 'Data Unavailable',
           isVerified: hasCdo,
           cdoPhoto: hasCdo ? 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=60' : null
         },
+        municipalitiesCount: district.municipalitiesCount,
+        ruralMunicipalitiesCount: district.ruralMunicipalitiesCount,
+        policeContact: district.policeContact,
+        emergencyContact: district.emergencyContact,
+        mayorName: district.mayorName,
         constituencies: matched.map((c) => ({
           id: c.id,
           name: c.name,
@@ -105,7 +111,7 @@ export default function InteractiveMap() {
           party: c.winnerRepresentative?.party || 'Independent',
           votes: c.voteCount || 'pending_verification',
           margin: c.victoryMargin || 'pending_verification',
-          promisesCount: 0,
+          promisesCount: c.winnerRepresentative?.promisesCompleted ?? 0,
           progress: 0
         }))
       });
@@ -144,13 +150,13 @@ export default function InteractiveMap() {
   }, [loading]);
 
   const PROVINCE_COLORS = {
-    1: '#8A9A86', // Koshi - Soft sage green
-    2: '#A88074', // Madhesh - Warm terracotta clay
-    3: '#7CA3A1', // Bagmati - Muted slate teal
-    4: '#C5A376', // Gandaki - Golden wheat ochre
-    5: '#6E8A9A', // Lumbini - Soft steel blue
-    6: '#967E91', // Karnali - Muted amethyst plum
-    7: '#B29B72'  // Sudurpashchim - Light brass/olive
+    'Koshi Province': '#8A9A86',
+    'Madhesh Province': '#A88074',
+    'Bagmati Province': '#7CA3A1',
+    'Gandaki Province': '#C5A376',
+    'Lumbini Province': '#6E8A9A',
+    'Karnali Province': '#967E91',
+    'Sudurpashchim Province': '#B29B72'
   };
 
   // Handle GeoJSON styling and interaction
@@ -162,55 +168,74 @@ export default function InteractiveMap() {
       map.removeLayer(geojsonLayerRef.current);
     }
 
+    // Calculates feature fill colors dynamically based on Province borders
     const getStyle = (feature) => {
-      const distName = feature.properties.DISTRICT;
-      const normalizedGeoName = normalizeName(distName);
-      const distRecord = districtsList.find(d => normalizeName(d.name) === normalizedGeoName);
-      const isSelected = selectedDistrict.toUpperCase() === distName.toUpperCase();
-      const province = feature.properties.PROVINCE;
+      const distName = feature.properties.DISTRICT || feature.properties.name || '';
+      const norm = normalizeName(distName);
+      const isSelected = norm === normalizeName(selectedDistrict);
       
-      let fillColor = PROVINCE_COLORS[province] || '#E4DCC8';
-      
-      if (mapMode === 'constituency' && distRecord) {
-        const districtConstituencies = constituenciesList.filter(c => c.districtId === distRecord.id);
-        if (districtConstituencies.length > 0) {
-          const primaryConstituency = districtConstituencies[0];
-          const winner = representativesList.find(r => r.constituencyId === primaryConstituency.id);
-          const party = winner?.party || 'IND';
-          fillColor = PARTIES[party]?.color || '#6B7280';
+      const matchedDistrict = districtsList.find(d => normalizeName(d.name) === norm);
+      const province = matchedDistrict?.province || 'Bagmati Province';
+      const baseColor = PROVINCE_COLORS[province] || '#CBD5E1';
+
+      if (mapMode === 'constituency') {
+        const constituencies = constituenciesList.filter(c => c.mapIdentifier === norm);
+        if (constituencies.length > 0) {
+          const mainWinner = constituencies[0]?.winnerRepresentative;
+          const partyColor = PARTIES[mainWinner?.party]?.color || '#4B5563';
+          return {
+            fillColor: partyColor,
+            weight: isSelected ? 3.5 : 1,
+            opacity: 0.9,
+            color: isSelected ? '#DC2626' : '#FAF9F6',
+            fillOpacity: isSelected ? 0.95 : 0.8
+          };
         }
       }
 
       return {
-        fillColor: fillColor,
-        weight: isSelected ? 2.5 : 1,
-        opacity: 1,
-        color: isSelected ? '#9C7A3C' : '#F3EFE4',
-        fillOpacity: mapMode === 'constituency' ? (isSelected ? 0.95 : 0.75) : (isSelected ? 0.9 : 0.7),
-        dashArray: isSelected ? '' : '3',
+        fillColor: isSelected ? '#FEF2F2' : '#FFFFFF',
+        weight: isSelected ? 3 : 1,
+        opacity: 0.9,
+        color: isSelected ? '#DC2626' : '#94A3B8',
+        fillOpacity: isSelected ? 0.95 : 0.85
       };
     };
 
     const onEachFeature = (feature, layer) => {
-      const distName = feature.properties.DISTRICT;
-      const province = feature.properties.PROVINCE;
-      const normalizedGeoName = normalizeName(distName);
-      const distRecord = districtsList.find(d => normalizeName(d.name) === normalizedGeoName);
-      const formattedName = distRecord ? distRecord.name : (distName.charAt(0) + distName.slice(1).toLowerCase());
+      const distName = feature.properties.DISTRICT || feature.properties.name || '';
+      const formattedName = distName.charAt(0) + distName.slice(1).toLowerCase();
+      const norm = normalizeName(distName);
+      const matchedRecord = getDistrictDataLocal(formattedName);
 
-      const popVal = distRecord && distRecord.population ? Number(distRecord.population).toLocaleString() : 'Data Unavailable';
-      const muniVal = distRecord && distRecord.municipalityCount ? distRecord.municipalityCount : 'Data Unavailable';
+      const popVal = matchedRecord && matchedRecord.population ? Number(matchedRecord.population).toLocaleString() : 'Data Unavailable';
+      const muniVal = matchedRecord && matchedRecord.municipalitiesCount ? matchedRecord.municipalitiesCount : 'Data Unavailable';
+      const province = matchedRecord?.province || feature.properties.PROVINCE || 'Unavailable';
 
       let tooltipContent = `
         <div class="p-2 font-sans bg-slate-900 text-white rounded-md shadow-lg border border-slate-700 min-w-[160px]">
-          <div class="font-bold text-xs border-b border-slate-700 pb-1 mb-1.5 text-amber-400 uppercase tracking-wider">${formattedName}</div>
+          <div class="font-bold text-xs border-b border-slate-700 pb-1 mb-1.5 text-amber-400 uppercase tracking-wider">${formattedName} District</div>
           <div class="text-[10px] text-slate-300 mb-0.5">Province: <span class="font-semibold text-slate-100">${province}</span></div>
           <div class="text-[10px] text-slate-300 mb-0.5">Population: <span class="font-semibold text-slate-100">${popVal}</span></div>
           <div class="text-[10px] text-slate-300 mb-0.5">Municipalities: <span class="font-semibold text-slate-100">${muniVal}</span></div>
       `;
 
-      if (mapMode === 'constituency' && distRecord) {
-        const districtConstituencies = constituenciesList.filter(c => c.districtId === distRecord.id);
+      if (mapMode === 'district') {
+        if (matchedRecord?.cdo?.isVerified) {
+          tooltipContent += `
+            <div class="mt-1.5 pt-1.5 border-t border-slate-700 text-[10px] text-amber-300">
+              CDO: <span class="font-semibold text-slate-100">${matchedRecord.cdo.name}</span>
+            </div>
+          `;
+        } else {
+          tooltipContent += `
+            <div class="mt-1.5 pt-1.5 border-t border-slate-700 text-[10px] text-amber-500 italic">
+              CDO verification pending
+            </div>
+          `;
+        }
+      } else {
+        const districtConstituencies = constituenciesList.filter(c => c.districtId === (matchedRecord?.id));
         if (districtConstituencies.length > 0) {
           const primary = districtConstituencies[0];
           const winner = representativesList.find(r => r.constituencyId === primary.id);
@@ -302,12 +327,11 @@ export default function InteractiveMap() {
     return null;
   }, [mapMode, selectedConstituencyId, districtConstituencies, representativesList]);
 
-  // Combined typeahead suggestions (districts and constituencies)
+  // Combined suggestions
   const filteredSuggestions = useMemo(() => {
     if (!searchQuery) return [];
     const query = searchQuery.toLowerCase().trim();
     
-    // Matched Districts
     const matchedDistricts = districtsList
       .filter(d => d.name.toLowerCase().includes(query))
       .map(d => ({
@@ -317,36 +341,30 @@ export default function InteractiveMap() {
         label: `${d.name} (District)`,
         data: d
       }));
-      
-    // Matched Constituencies
+
     const matchedConstituencies = constituenciesList
-      .filter(c => c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query))
-      .map(c => {
-        const dist = districtsList.find(d => d.id === c.districtId);
-        return {
-          id: `const-${c.id}`,
-          name: c.name,
-          type: 'constituency',
-          label: `${c.name} (${dist ? dist.name : ''})`,
-          data: c
-        };
-      });
-      
-    return [...matchedDistricts, ...matchedConstituencies].slice(0, 8);
+      .filter(c => c.name.toLowerCase().includes(query))
+      .map(c => ({
+        id: `const-${c.id}`,
+        name: c.name,
+        type: 'constituency',
+        label: `${c.name} (Constituency)`,
+        data: c
+      }));
+
+    return [...matchedDistricts, ...matchedConstituencies].slice(0, 6);
   }, [searchQuery, districtsList, constituenciesList]);
 
-  const handleSearchSelect = (item) => {
+  const handleSearchSelect = (suggestion) => {
     setSearchQuery('');
-    
-    if (item.type === 'district') {
-      const distName = item.name;
-      setSelectedDistrict(distName);
+    if (suggestion.type === 'district') {
+      setSelectedDistrict(suggestion.name);
       setSelectedConstituencyId(null);
-      
       if (geojsonLayerRef.current && leafletMapInstance.current) {
         const map = leafletMapInstance.current;
         geojsonLayerRef.current.eachLayer((layer) => {
-          if (layer.feature.properties.DISTRICT.toUpperCase() === distName.toUpperCase()) {
+          const dName = layer.feature.properties.DISTRICT || layer.feature.properties.name || '';
+          if (dName.toUpperCase() === suggestion.name.toUpperCase()) {
             map.fitBounds(layer.getBounds(), {
               padding: [50, 50],
               maxZoom: 9,
@@ -356,18 +374,17 @@ export default function InteractiveMap() {
           }
         });
       }
-    } else if (item.type === 'constituency') {
-      const constituency = item.data;
-      const district = districtsList.find(d => d.id === constituency.districtId);
-      if (district) {
-        setSelectedDistrict(district.name);
-        setSelectedConstituencyId(constituency.id);
-        setMapMode('constituency'); // Automatically switch to constituency view
-        
+    } else if (suggestion.type === 'constituency') {
+      const dist = districtsList.find(d => d.id === suggestion.data.districtId);
+      if (dist) {
+        setSelectedDistrict(dist.name);
+        setSelectedConstituencyId(suggestion.data.id);
+        setMapMode('constituency');
         if (geojsonLayerRef.current && leafletMapInstance.current) {
           const map = leafletMapInstance.current;
           geojsonLayerRef.current.eachLayer((layer) => {
-            if (layer.feature.properties.DISTRICT.toUpperCase() === district.name.toUpperCase()) {
+            const dName = layer.feature.properties.DISTRICT || layer.feature.properties.name || '';
+            if (dName.toUpperCase() === dist.name.toUpperCase()) {
               map.fitBounds(layer.getBounds(), {
                 padding: [50, 50],
                 maxZoom: 9,
@@ -391,52 +408,24 @@ export default function InteractiveMap() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans">
-        {/* Header Skeleton */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-dust-beige/40 pb-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-slate-200 pb-6">
           <div className="space-y-2">
-            <div className="h-8 w-80 bg-weather-stone rounded-sm animate-shimmer"></div>
-            <div className="h-4 w-96 bg-weather-stone/60 rounded-sm animate-shimmer"></div>
+            <div className="h-8 w-80 bg-slate-200 rounded animate-pulse"></div>
+            <div className="h-4 w-96 bg-slate-100 rounded animate-pulse"></div>
           </div>
-          <div className="h-10 w-80 bg-weather-stone rounded-sm animate-shimmer"></div>
         </div>
-
-        {/* Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 flex flex-col gap-4">
-            <div className="h-12 w-full bg-weather-stone/50 rounded-sm animate-shimmer"></div>
-            <div className="h-[480px] w-full bg-weather-stone/20 border border-dashed border-dust-beige rounded-sm flex flex-col items-center justify-center text-slate-basalt/50 font-serif">
-              <div className="animate-spin inline-block w-8 h-8 border-4 border-current border-t-transparent text-temple-brass rounded-full mb-4"></div>
-              <p>Loading Cartographic Outlines...</p>
+            <div className="h-[480px] w-full bg-slate-50 border border-slate-200 rounded flex items-center justify-center text-slate-400">
+              <span className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
             </div>
           </div>
-
-          {/* Sidebar Dossier Skeleton */}
-          <div className="bg-himalayan-mist border-2 border-dust-beige p-6 relative rounded-sm shadow-md flex flex-col justify-between h-[544px] overflow-hidden">
-            <div className="space-y-6">
-              <div className="flex flex-col items-center border-b border-dust-beige/80 pb-4 mb-5 space-y-2">
-                <div className="w-10 h-10 rounded-full bg-weather-stone animate-shimmer"></div>
-                <div className="h-3 w-40 bg-weather-stone animate-shimmer"></div>
-                <div className="h-6 w-32 bg-weather-stone animate-shimmer"></div>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 bg-weather-stone p-4 border border-dust-beige/50 rounded-sm">
-                  <div className="w-12 h-12 rounded-full bg-weather-stone/80 animate-shimmer"></div>
-                  <div className="flex-grow space-y-2">
-                    <div className="h-3 w-20 bg-weather-stone/80 animate-shimmer"></div>
-                    <div className="h-4 w-40 bg-weather-stone/80 animate-shimmer"></div>
-                  </div>
-                </div>
-
-                <div className="space-y-2.5">
-                  <div className="h-12 w-full bg-weather-stone/30 border border-dust-beige/20 rounded-sm animate-shimmer"></div>
-                  <div className="h-12 w-full bg-weather-stone/30 border border-dust-beige/20 rounded-sm animate-shimmer"></div>
-                  <div className="h-12 w-full bg-weather-stone/30 border border-dust-beige/20 rounded-sm animate-shimmer"></div>
-                </div>
-              </div>
+          <div className="bg-slate-50 border border-slate-200 p-6 rounded flex flex-col justify-between h-[480px]">
+            <div className="space-y-4">
+              <div className="h-4 w-20 bg-slate-200 rounded"></div>
+              <div className="h-8 w-40 bg-slate-200 rounded"></div>
+              <div className="h-24 w-full bg-slate-100 rounded"></div>
             </div>
-
-            <div className="h-12 w-full bg-weather-stone rounded-sm animate-shimmer mt-auto"></div>
           </div>
         </div>
       </div>
@@ -444,18 +433,18 @@ export default function InteractiveMap() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-dust-beige/40 pb-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans text-left">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-slate-200 pb-6">
         <div>
-          <h1 className="text-3xl font-serif text-pagoda-wood tracking-tight">
+          <h1 className="text-3xl font-serif text-pagoda-wood font-extrabold tracking-tight">
             Interactive Constituency & District Map
           </h1>
-          <p className="text-sm text-slate-basalt/70 font-serif">
-            Electoral metrics and Chief District Officer (CDO) administrative dossier
+          <p className="text-sm text-slate-basalt/70 leading-relaxed mt-1">
+            Explore local representatives, emergency operations, and verified Chief District Officer (CDO) rosters.
           </p>
         </div>
 
-        {/* Search Bar with autocomplete typeahead */}
+        {/* Search Bar */}
         <div className="w-full lg:w-80 relative">
           <form onSubmit={handleSearchSubmit}>
             <div className="relative">
@@ -464,11 +453,11 @@ export default function InteractiveMap() {
                 placeholder="Search District or Constituency..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-weather-stone border border-dust-beige text-slate-basalt py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass rounded-sm shadow-inner placeholder:text-slate-basalt/50"
+                className="w-full bg-white border border-slate-200 text-slate-basalt py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-nepal-red rounded shadow-sm font-medium"
               />
               <button
                 type="submit"
-                className="absolute right-3 top-3 text-slate-basalt/60 hover:text-temple-brass transition-colors"
+                className="absolute right-3 top-3 text-slate-400 hover:text-nepal-red transition-colors"
               >
                 <Search className="w-4 h-4" />
               </button>
@@ -476,15 +465,15 @@ export default function InteractiveMap() {
           </form>
 
           {searchQuery && filteredSuggestions.length > 0 && (
-            <div className="absolute z-[1000] left-0 right-0 mt-1 bg-himalayan-mist border border-dust-beige shadow-lg rounded-sm overflow-hidden">
+            <div className="absolute z-[1000] left-0 right-0 mt-1 bg-white border border-slate-200 shadow-lg rounded overflow-hidden">
               {filteredSuggestions.map((suggestion) => (
                 <button
                   key={suggestion.id}
                   onClick={() => handleSearchSelect(suggestion)}
-                  className="w-full text-left px-4 py-2 text-sm text-slate-basalt hover:bg-weather-stone transition-colors font-medium border-b border-dust-beige/20 last:border-0 flex justify-between items-center"
+                  className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 flex justify-between items-center"
                 >
-                  <span className="font-semibold text-pagoda-wood">{suggestion.name}</span>
-                  <span className="text-[10px] text-slate-basalt/60 bg-weather-stone/50 px-2 py-0.5 rounded-sm capitalize">
+                  <span className="text-pagoda-wood">{suggestion.name}</span>
+                  <span className="text-[9px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase">
                     {suggestion.type}
                   </span>
                 </button>
@@ -495,56 +484,53 @@ export default function InteractiveMap() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Map View */}
         <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="flex justify-between items-center bg-weather-stone/30 border border-dust-beige/50 p-3 rounded-sm text-xs font-semibold uppercase tracking-wider text-slate-basalt">
-            {/* Toggle Switch */}
+          <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded text-xs font-bold uppercase tracking-wider text-slate-600">
             <div className="flex items-center gap-3">
-              <span className="text-[10px] text-slate-basalt/80">Mode:</span>
-              <div className="bg-pagoda-wood p-0.5 rounded-full flex relative shadow-inner">
+              <span className="text-[10px] text-slate-400">Map Filter:</span>
+              <div className="bg-slate-200 p-0.5 rounded flex relative shadow-inner">
                 <button
                   onClick={() => setMapMode('district')}
-                  className={`px-3 py-1.5 rounded-full transition-all duration-300 ${
+                  className={`px-3 py-1.5 rounded transition-all text-[10px] font-bold ${
                     mapMode === 'district'
-                      ? 'bg-temple-brass text-pagoda-wood shadow-[0_0_12px_rgba(156,122,60,0.6)] font-bold'
-                      : 'text-himalayan-mist/70 hover:text-himalayan-mist'
+                      ? 'bg-pagoda-wood text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  District CDO
+                  District Dossier
                 </button>
                 <button
                   onClick={() => setMapMode('constituency')}
-                  className={`px-3 py-1.5 rounded-full transition-all duration-300 ${
+                  className={`px-3 py-1.5 rounded transition-all text-[10px] font-bold ${
                     mapMode === 'constituency'
-                      ? 'bg-temple-brass text-pagoda-wood shadow-[0_0_12px_rgba(156,122,60,0.6)] font-bold'
-                      : 'text-himalayan-mist/70 hover:text-himalayan-mist'
+                      ? 'bg-pagoda-wood text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   Constituency Results
                 </button>
               </div>
-              <span className="text-[9px] text-temple-brass bg-temple-brass/10 border border-temple-brass/30 px-2 py-1.5 rounded-sm font-sans tracking-wide">
-                Results as of March 2026 General Election
-              </span>
             </div>
 
-            <div className="flex items-center gap-1.5 text-temple-brass hover:text-temple-brass/90 transition-colors">
+            <div className="flex items-center gap-1.5 text-nepal-red font-semibold">
               <MapPin className="w-3.5 h-3.5" />
               <span>{hoveredFeatureName || selectedDistrict || 'Hover over map'}</span>
             </div>
           </div>
 
-          <div className="relative h-[480px] w-full border border-dust-beige shadow-sm bg-[#F3EFE4] overflow-hidden rounded-sm">
-            <div ref={mapRef} className="h-full w-full" />
-            <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-15 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-50 via-amber-200 to-amber-950 z-[900]" />
+          <div className="relative h-[480px] w-full border border-slate-200 bg-[#FFFFFF] overflow-hidden rounded">
+            <div ref={mapRef} className="h-full w-full z-10" />
             
             {mapMode === 'constituency' && (
-              <div className="absolute bottom-4 left-4 z-[999] bg-himalayan-mist/95 backdrop-blur-sm border border-dust-beige/80 p-3 rounded-sm shadow-md text-[10px] font-sans text-slate-basalt">
-                <h4 className="font-bold border-b border-dust-beige pb-1 mb-2 uppercase tracking-wide">Winning Party</h4>
+              <div className="absolute bottom-4 left-4 z-[999] bg-white border border-slate-200 p-3.5 rounded shadow text-[10px] font-bold text-slate-500 text-left">
+                <h4 className="border-b border-slate-100 pb-1 mb-2 uppercase tracking-wider">Party Colors</h4>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
                   {Object.values(PARTIES).map(p => (
                     <div key={p.short} className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 block border border-black/10 rounded-sm" style={{ backgroundColor: p.color }} />
-                      <span className="font-semibold">{p.short}</span>
+                      <span className="w-3 h-3 block rounded-sm" style={{ backgroundColor: p.color }} />
+                      <span className="font-bold">{p.short}</span>
                     </div>
                   ))}
                 </div>
@@ -553,7 +539,7 @@ export default function InteractiveMap() {
           </div>
         </div>
 
-        {/* Side Panel Details */}
+        {/* Side Panel District Mini-Portal Dashboard */}
         <div className="flex flex-col">
           <div className="flex-grow bg-himalayan-mist border-2 border-dust-beige p-6 relative rounded-sm shadow-md flex flex-col justify-between overflow-hidden">
             <div className="absolute top-2 left-2 right-2 bottom-2 border border-dust-beige/40 pointer-events-none" />
@@ -567,7 +553,7 @@ export default function InteractiveMap() {
                 <span className="block text-[10px] uppercase tracking-widest text-slate-basalt/60 font-semibold mb-1">
                   OFFICIAL GOVERNMENT DOSSIER
                 </span>
-                <h2 className="text-2.5xl font-serif text-pagoda-wood leading-none font-bold">
+                <h2 className="text-2xl font-serif text-pagoda-wood font-extrabold mt-1">
                   {selectedDistrict} District
                 </h2>
                 {selectedDistrictRecord && (
@@ -579,25 +565,25 @@ export default function InteractiveMap() {
 
               {selectedDistrictRecord ? (
                 mapMode === 'district' ? (
-                  <div className="flex flex-col flex-grow">
+                  <div className="flex flex-col flex-grow text-left">
                     {/* Tab Navigation */}
-                    <div className="flex border-b border-dust-beige mb-4 bg-weather-stone/40 p-1 rounded-sm">
+                    <div className="flex border-b border-slate-200 mb-4 bg-slate-50 p-1 rounded-sm">
                       <button
                         onClick={() => setActiveDashboardTab('cdo')}
                         className={`flex-1 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider rounded-sm transition-all ${
                           activeDashboardTab === 'cdo'
-                            ? 'bg-temple-brass text-pagoda-wood shadow-sm font-bold'
-                            : 'text-slate-basalt/60 hover:text-slate-basalt'
+                            ? 'bg-pagoda-wood text-white shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
-                        CDO & Office
+                        CDO & Contacts
                       </button>
                       <button
                         onClick={() => setActiveDashboardTab('demographics')}
                         className={`flex-1 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider rounded-sm transition-all ${
                           activeDashboardTab === 'demographics'
-                            ? 'bg-temple-brass text-pagoda-wood shadow-sm font-bold'
-                            : 'text-slate-basalt/60 hover:text-slate-basalt'
+                            ? 'bg-pagoda-wood text-white shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
                         Stats
@@ -606,8 +592,8 @@ export default function InteractiveMap() {
                         onClick={() => setActiveDashboardTab('reports')}
                         className={`flex-1 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider rounded-sm transition-all ${
                           activeDashboardTab === 'reports'
-                            ? 'bg-temple-brass text-pagoda-wood shadow-sm font-bold'
-                            : 'text-slate-basalt/60 hover:text-slate-basalt'
+                            ? 'bg-pagoda-wood text-white shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
                         Feed
@@ -615,104 +601,153 @@ export default function InteractiveMap() {
                     </div>
 
                     {/* Tab Content */}
-                    <div className="flex-grow overflow-y-auto max-h-[300px] pr-1">
+                    <div className="flex-grow overflow-y-auto max-h-[400px] pr-1">
                       {activeDashboardTab === 'cdo' && (
-                        <div className="space-y-4 font-serif animate-fade-in">
+                        <div className="space-y-4 animate-fade-in text-xs text-slate-700">
                           {selectedDistrictRecord.cdo.isVerified ? (
-                            <div className="bg-weather-stone p-4 border border-dust-beige/50 rounded-sm flex items-center gap-4 shadow-inner">
-                              <div className="w-12 h-12 rounded-full bg-pagoda-wood/10 flex items-center justify-center border border-dust-beige/80 relative">
-                                <User className="w-6 h-6 text-slate-basalt" />
+                            <div className="bg-slate-50 p-3.5 border border-slate-200 rounded flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-slate-200 relative">
+                                <User className="w-5 h-5 text-slate-500" />
                                 <span className="absolute -bottom-1 -right-1 bg-green-600 text-white p-0.5 rounded-full text-[8px] font-bold">✓</span>
                               </div>
                               <div>
-                                <span className="block text-[9px] font-sans font-semibold uppercase tracking-wider text-slate-basalt/60">
+                                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">
                                   Chief District Officer (Verified)
                                 </span>
-                                <h3 className="text-sm text-pagoda-wood font-bold">
+                                <h3 className="text-xs font-bold text-pagoda-wood">
                                   {selectedDistrictRecord.cdo.name}
                                 </h3>
+                                {selectedDistrictRecord.cdo.assistant && selectedDistrictRecord.cdo.assistant !== 'Data Unavailable' && (
+                                  <span className="text-[9px] text-slate-400 font-bold block mt-0.5">Asst: {selectedDistrictRecord.cdo.assistant}</span>
+                                )}
                               </div>
                             </div>
                           ) : (
-                            <div className="bg-red-50/50 p-4 border border-red-200/50 rounded-sm flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center border border-red-200">
-                                <User className="w-6 h-6 text-red-600" />
+                            <div className="bg-red-50/50 p-3.5 border border-red-200/50 rounded flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center border border-red-200">
+                                <User className="w-5 h-5 text-red-600" />
                               </div>
                               <div>
-                                <span className="block text-[9px] font-sans font-semibold uppercase tracking-wider text-red-600/80">
+                                <span className="block text-[8px] font-bold uppercase tracking-wider text-red-500">
                                   Chief District Officer
                                 </span>
-                                <h3 className="text-sm text-red-700 font-bold">
+                                <h3 className="text-xs font-bold text-red-700">
                                   Data Unavailable
                                 </h3>
                               </div>
                             </div>
                           )}
 
-                          <div className="space-y-2.5 text-xs text-slate-basalt">
-                            <div className="flex items-start gap-3 bg-weather-stone/30 p-2.5 border border-dust-beige/20 rounded-sm hover:border-dust-beige/50 transition-colors">
-                              <Phone className="w-4 h-4 mt-0.5 text-temple-brass" />
-                              <div>
-                                <span className="block text-[9px] font-sans font-semibold uppercase tracking-wider text-slate-basalt/50">Office Hotline</span>
-                                <span className="font-sans font-medium">{selectedDistrictRecord.cdo.phone}</span>
-                              </div>
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">Hotline</span>
+                              <span className="font-bold text-slate-800">{selectedDistrictRecord.cdo.phone}</span>
                             </div>
-                            <div className="flex items-start gap-3 bg-weather-stone/30 p-2.5 border border-dust-beige/20 rounded-sm hover:border-dust-beige/50 transition-colors">
-                              <Mail className="w-4 h-4 mt-0.5 text-temple-brass" />
-                              <div className="truncate">
-                                <span className="block text-[9px] font-sans font-semibold uppercase tracking-wider text-slate-basalt/50">Office Hours</span>
-                                <span className="font-sans font-medium truncate">{selectedDistrictRecord.cdo.officeHours}</span>
-                              </div>
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">DAO Email</span>
+                              <span className="font-bold text-blue-600 hover:underline font-mono">
+                                {selectedDistrictRecord.cdo.email !== 'Data Unavailable' ? (
+                                  <a href={`mailto:${selectedDistrictRecord.cdo.email}`}>{selectedDistrictRecord.cdo.email}</a>
+                                ) : 'Data Unavailable'}
+                              </span>
                             </div>
-                            <div className="flex items-start gap-3 bg-weather-stone/30 p-2.5 border border-dust-beige/20 rounded-sm hover:border-dust-beige/50 transition-colors">
-                              <MapPin className="w-4 h-4 mt-0.5 text-temple-brass" />
-                              <div>
-                                <span className="block text-[9px] font-sans font-semibold uppercase tracking-wider text-slate-basalt/50">HQ & Address</span>
-                                <span className="leading-relaxed">{selectedDistrictRecord.cdo.office}</span>
-                              </div>
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">Website</span>
+                              <span className="font-bold text-blue-600 hover:underline">
+                                {selectedDistrictRecord.cdo.website !== 'Data Unavailable' ? (
+                                  <a href={selectedDistrictRecord.cdo.website} target="_blank" rel="noreferrer">Visit Website</a>
+                                ) : 'Data Unavailable'}
+                              </span>
                             </div>
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">Office Hours</span>
+                              <span className="font-bold text-slate-800">{selectedDistrictRecord.cdo.officeHours}</span>
+                            </div>
+                            <div className="py-1">
+                              <span className="block text-slate-400 font-bold uppercase text-[9px] mb-0.5">Address</span>
+                              <span className="font-medium text-slate-800">{selectedDistrictRecord.cdo.office}</span>
+                            </div>
+
+                            {/* Emergency Contacts */}
+                            {selectedDistrictRecord.cdo.isVerified && (selectedDistrictRecord.policeContact || selectedDistrictRecord.emergencyContact) && (
+                              <div className="grid grid-cols-2 gap-2 pt-2">
+                                {selectedDistrictRecord.policeContact && (
+                                  <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                                    <span className="block text-[8px] font-bold uppercase text-slate-400">Police Hotline</span>
+                                    <span className="font-extrabold text-slate-700">{selectedDistrictRecord.policeContact}</span>
+                                  </div>
+                                )}
+                                {selectedDistrictRecord.emergencyContact && (
+                                  <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                                    <span className="block text-[8px] font-bold uppercase text-slate-400">Emergency Ops</span>
+                                    <span className="font-extrabold text-slate-700">{selectedDistrictRecord.emergencyContact}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
                       {activeDashboardTab === 'demographics' && (
-                        <div className="space-y-4 font-sans animate-fade-in">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-weather-stone/50 p-4 border border-dust-beige/50 rounded-sm text-center">
-                              <span className="block text-[9px] font-bold text-slate-basalt/50 uppercase">Total Population</span>
-                              <span className="text-xl font-bold text-pagoda-wood block mt-1">
+                        <div className="space-y-4 font-sans animate-fade-in text-xs text-slate-700">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-slate-50 p-3.5 border border-slate-200 rounded text-center">
+                              <span className="block text-[9px] font-bold text-slate-400 uppercase">Population</span>
+                              <span className="text-lg font-bold text-pagoda-wood block mt-1">
                                 {selectedDistrictRecord.population ? Number(selectedDistrictRecord.population).toLocaleString() : 'Data Unavailable'}
                               </span>
                             </div>
-                            <div className="bg-weather-stone/50 p-4 border border-dust-beige/50 rounded-sm text-center">
-                              <span className="block text-[9px] font-bold text-slate-basalt/50 uppercase">Local Units</span>
-                              <span className="text-xl font-bold text-pagoda-wood block mt-1">
-                                {selectedDistrictRecord.municipalityCount || 'Data Unavailable'}
+                            <div className="bg-slate-50 p-3.5 border border-slate-200 rounded text-center">
+                              <span className="block text-[9px] font-bold text-slate-400 uppercase">Local Units</span>
+                              <span className="text-lg font-bold text-pagoda-wood block mt-1">
+                                {selectedDistrictRecord.municipalitiesCount || 'Data Unavailable'}
                               </span>
                             </div>
                           </div>
-                          <div className="bg-weather-stone/30 p-4 border border-dust-beige/20 rounded-sm text-xs space-y-2">
-                            <div className="flex justify-between border-b border-dust-beige/30 pb-1.5">
-                              <span className="text-slate-basalt/60">Province</span>
-                              <span className="font-semibold text-pagoda-wood">{selectedDistrictRecord.province}</span>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">Province</span>
+                              <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.province}</span>
                             </div>
-                            <div className="flex justify-between border-b border-dust-beige/30 pb-1.5">
-                              <span className="text-slate-basalt/60">Headquarters</span>
-                              <span className="font-semibold text-pagoda-wood">{selectedDistrictRecord.cdo.isVerified ? selectedDistrictRecord.cdo.office.split(',')[1] || 'N/A' : 'Data Unavailable'}</span>
-                            </div>
+                            {selectedDistrictRecord.headquarters && (
+                              <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                                <span className="text-slate-400 font-bold uppercase text-[9px]">Headquarters</span>
+                                <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.headquarters}</span>
+                              </div>
+                            )}
+                            {selectedDistrictRecord.areaSqKm && (
+                              <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                                <span className="text-slate-400 font-bold uppercase text-[9px]">Area</span>
+                                <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.areaSqKm} sq km</span>
+                              </div>
+                            )}
+                            {selectedDistrictRecord.ruralMunicipalitiesCount !== undefined && (
+                              <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                                <span className="text-slate-400 font-bold uppercase text-[9px]">Rural Municipalities</span>
+                                <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.ruralMunicipalitiesCount}</span>
+                              </div>
+                            )}
+                            {selectedDistrictRecord.mayorName && (
+                              <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                                <span className="text-slate-400 font-bold uppercase text-[9px]">HQ Mayor</span>
+                                <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.mayorName}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
                       {activeDashboardTab === 'reports' && (
-                        <div className="space-y-4 font-sans animate-fade-in">
+                        <div className="space-y-4 font-sans animate-fade-in text-xs">
                           <div>
-                            <h4 className="text-xs font-bold text-pagoda-wood uppercase border-b border-dust-beige pb-1 mb-2 tracking-wide">Public Notices</h4>
+                            <h4 className="text-xs font-bold text-pagoda-wood uppercase border-b border-slate-100 pb-1 mb-2 tracking-wide">Public Notices</h4>
                             {selectedDistrictRecord.publicNotices && selectedDistrictRecord.publicNotices.length > 0 ? (
-                              <div className="space-y-2">
+                              <div className="space-y-2 text-left">
                                 {selectedDistrictRecord.publicNotices.map((notice) => (
-                                  <div key={notice.id} className="bg-yellow-50/50 border border-yellow-200/50 p-2.5 rounded-sm">
-                                    <div className="flex justify-between text-[9px] text-yellow-800 font-semibold mb-1">
+                                  <div key={notice.id} className="bg-amber-50 border border-amber-200/50 p-2.5 rounded-sm">
+                                    <div className="flex justify-between text-[9px] text-amber-800 font-semibold mb-1">
                                       <span>NOTICE</span>
                                       <span>{notice.date}</span>
                                     </div>
@@ -721,14 +756,14 @@ export default function InteractiveMap() {
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-xs text-slate-basalt/60 italic py-2 text-center">No active notices.</p>
+                              <p className="text-xs text-slate-400 italic py-2 text-center">No active notices.</p>
                             )}
                           </div>
 
                           <div className="pt-2">
-                            <h4 className="text-xs font-bold text-pagoda-wood uppercase border-b border-dust-beige pb-1 mb-2 tracking-wide">Citizen Reports</h4>
+                            <h4 className="text-xs font-bold text-pagoda-wood uppercase border-b border-slate-100 pb-1 mb-2 tracking-wide">Citizen Reports</h4>
                             {selectedDistrictRecord.citizenReports && selectedDistrictRecord.citizenReports.length > 0 ? (
-                              <div className="space-y-2">
+                              <div className="space-y-2 text-left">
                                 {selectedDistrictRecord.citizenReports.map((report) => (
                                   <div key={report.id} className="bg-slate-50 border border-slate-200 p-2.5 rounded-sm">
                                     <div className="flex justify-between text-[9px] font-semibold mb-1">
@@ -743,7 +778,7 @@ export default function InteractiveMap() {
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-xs text-slate-basalt/60 italic py-2 text-center">No citizen reports recorded.</p>
+                              <p className="text-xs text-slate-400 italic py-2 text-center">No citizen reports recorded.</p>
                             )}
                           </div>
                         </div>
@@ -751,66 +786,60 @@ export default function InteractiveMap() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4 animate-fade-in">
-                    <span className="block text-[10px] font-sans font-semibold uppercase tracking-widest text-slate-basalt/60 text-center mb-1">
+                  <div className="space-y-4 animate-fade-in text-left">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 text-center mb-1">
                       Electoral Constituencies ({districtConstituencies.length})
                     </span>
                     
-                    <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                       {districtConstituencies.map((constObj) => {
                         const rep = representativesList.find(r => r.constituencyId === constObj.id);
-                        const partyInfo = PARTIES[rep?.party || 'IND'];
+                        const partyInfo = PARTIES[rep?.party];
                         const isActive = selectedConstituencyId === constObj.id || (!selectedConstituencyId && districtConstituencies[0]?.id === constObj.id);
                         return (
                           <div 
                             key={constObj.id} 
                             onClick={() => setSelectedConstituencyId(constObj.id)}
-                            className={`p-3.5 border rounded-sm space-y-2 font-serif shadow-sm transition-colors cursor-pointer ${
+                            className={`p-3.5 border rounded space-y-2.5 transition-colors cursor-pointer text-left ${
                               isActive
-                                ? 'bg-weather-stone border-temple-brass ring-1 ring-temple-brass shadow-[0_0_10px_rgba(156,122,60,0.2)]' 
-                                : 'bg-weather-stone/60 border-dust-beige/50 hover:border-temple-brass/50'
+                                ? 'bg-slate-50 border-nepal-red ring-1 ring-nepal-red/10' 
+                                : 'bg-white border-slate-200 hover:border-slate-300'
                             }`}
                           >
                             <div className="flex justify-between items-center">
-                              <span className="font-sans text-xs font-bold text-pagoda-wood uppercase tracking-wide">
+                              <span className="text-xs font-bold text-pagoda-wood uppercase tracking-wide">
                                 {constObj.name}
                               </span>
                               <span 
-                                className="px-2 py-0.5 rounded-sm text-[9px] font-sans font-bold border border-black/10 uppercase"
-                                style={{ backgroundColor: partyInfo?.color, color: partyInfo?.text }}
+                                className="px-2 py-0.5 rounded text-[8px] font-bold uppercase"
+                                style={{ backgroundColor: partyInfo?.color || '#4B5563', color: 'white' }}
                               >
                                 {partyInfo?.short || rep?.party || 'IND'}
                               </span>
                             </div>
                             
-                            <div className="flex items-center gap-3">
-                              {rep?.photoUrl ? (
-                                <img 
-                                  src={rep.photoUrl} 
-                                  alt={rep.name} 
-                                  className="w-10 h-10 rounded-full object-cover border border-dust-beige/80" 
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-pagoda-wood/10 flex items-center justify-center border border-dust-beige/80">
-                                  <User className="w-4 h-4 text-slate-basalt" />
-                                </div>
-                              )}
+                            <div className="flex items-center gap-2.5">
+                              <img 
+                                src={rep?.photoUrl || '/avatar.png'} 
+                                alt={rep?.name} 
+                                className="w-8 h-8 rounded-full object-cover border border-slate-200" 
+                              />
                               <div>
-                                <span className="block text-[9px] font-sans font-semibold uppercase tracking-wider text-slate-basalt/50">Elected Representative</span>
-                                <h4 className="text-sm font-bold text-pagoda-wood flex items-center gap-1">
+                                <span className="block text-[8px] font-bold uppercase text-slate-400">Elected Representative</span>
+                                <h4 className="text-xs font-bold text-pagoda-wood">
                                   {rep ? rep.name : 'Unknown Representative'}
                                 </h4>
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-dust-beige/30 text-[10px] text-slate-basalt/80 font-sans">
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-[10px] text-slate-600 font-bold uppercase">
                               <div>
-                                <span className="block text-[8px] font-semibold text-slate-basalt/50 uppercase">Attendance</span>
-                                <span className="font-bold text-sm text-pagoda-wood">{rep?.attendancePercent ? `${rep.attendancePercent}%` : 'N/A'}</span>
+                                <span className="block text-[7px] text-slate-400">Attendance</span>
+                                <span className="font-extrabold text-sm text-pagoda-wood">{rep?.attendancePercent ? `${rep.attendancePercent}%` : 'N/A'}</span>
                               </div>
                               <div>
-                                <span className="block text-[8px] font-semibold text-slate-basalt/50 uppercase">Bills Sponsored</span>
-                                <span className="font-bold text-sm text-terraced-pine">{rep?.billsSponsored ?? 'N/A'}</span>
+                                <span className="block text-[7px] text-slate-400">Promises Tracked</span>
+                                <span className="font-extrabold text-sm text-nepal-red">{rep?.promisesCompleted ?? 0}</span>
                               </div>
                             </div>
                           </div>
@@ -820,29 +849,29 @@ export default function InteractiveMap() {
                   </div>
                 )
               ) : (
-                <div className="py-10 text-center text-slate-basalt/60 font-serif">
-                  No data loaded. Select a district.
+                <div className="py-10 text-center text-slate-400 font-serif">
+                  Select a district to view details.
                 </div>
               )}
             </div>
 
             {/* View Full Report Card Link */}
             {mapMode === 'constituency' && activeRep ? (
-              <div className="mt-8 relative z-10">
+              <div className="mt-6 relative z-10">
                 <Link
                   to={`/representative/${activeRep.id}`}
-                  className="w-full bg-terraced-pine text-himalayan-mist py-3 px-4 font-semibold hover:bg-temple-brass hover:text-pagoda-wood hover:shadow-[0_0_12px_rgba(156,122,60,0.4)] transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-sm rounded-sm"
+                  className="w-full bg-pagoda-wood hover:bg-nepal-red text-white py-3 px-4 font-bold transition-all duration-200 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider rounded shadow-sm"
                 >
                   <Award className="w-4 h-4" />
-                  View Full Report Card
+                  View Full Politician Profile
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             ) : (
-              <div className="mt-8 relative z-10">
-                <div className="w-full bg-slate-basalt/10 text-slate-basalt/60 py-3 px-4 font-semibold flex items-center justify-center gap-2 text-xs uppercase tracking-widest rounded-sm cursor-not-allowed">
+              <div className="mt-6 relative z-10">
+                <div className="w-full bg-slate-100 text-slate-400 py-3 px-4 font-bold flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider rounded border border-slate-200">
                   <Landmark className="w-4 h-4" />
-                  District Dossier Active
+                  Audit Dossier Active
                 </div>
               </div>
             )}

@@ -47,6 +47,53 @@ const Representative = sequelize.define('Representative', {
   bio: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  education: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  electionHistory: {
+    type: DataTypes.TEXT,
+    field: 'election_history',
+    allowNull: true
+  },
+  assets: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  declarations: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  votingRecord: {
+    type: DataTypes.TEXT,
+    field: 'voting_record',
+    allowNull: true
+  },
+  promisesCompleted: {
+    type: DataTypes.INTEGER,
+    field: 'promises_completed',
+    defaultValue: 0
+  },
+  promisesInProgress: {
+    type: DataTypes.INTEGER,
+    field: 'promises_in_progress',
+    defaultValue: 0
+  },
+  promisesBroken: {
+    type: DataTypes.INTEGER,
+    field: 'promises_broken',
+    defaultValue: 0
+  },
+  promisesDelayed: {
+    type: DataTypes.INTEGER,
+    field: 'promises_delayed',
+    defaultValue: 0
+  },
+  ratingValue: {
+    type: DataTypes.DECIMAL(3, 2),
+    field: 'rating_value',
+    defaultValue: 4.0
   }
 }, {
   tableName: 'representatives'

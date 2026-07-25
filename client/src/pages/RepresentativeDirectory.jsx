@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { representativesAPI, constituenciesAPI } from '../api';
+import { representativesAPI } from '../api';
 import RatingStars from '../components/RatingStars';
-import { Search, AlertTriangle, ChevronRight, Users, Filter } from 'lucide-react';
+import { Search, AlertTriangle, ChevronRight, Users, Filter, Landmark } from 'lucide-react';
 
-// ─── Shimmer skeleton ─────────────────────────────────────────────────────────
 function Shimmer({ className }) {
   return (
-    <div className={`bg-weathered-stone relative overflow-hidden ${className}`} aria-hidden="true">
-      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_infinite] bg-gradient-to-r from-weathered-stone via-himalayan-mist/60 to-weathered-stone" />
+    <div className={`bg-slate-200 relative overflow-hidden ${className}`} aria-hidden="true">
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_infinite] bg-gradient-to-r from-slate-200 via-white/60 to-slate-200" />
     </div>
   );
 }
@@ -17,12 +16,11 @@ function GridSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="bg-weathered-stone border border-dust-beige p-6 space-y-4">
+        <div key={i} className="bg-white border border-slate-200 p-6 space-y-4 rounded">
           <Shimmer className="h-5 w-48" />
           <Shimmer className="h-4 w-32" />
           <Shimmer className="h-4 w-40" />
-          <Shimmer className="h-4 w-24" />
-          <div className="pt-4 border-t border-dust-beige">
+          <div className="pt-4 border-t border-slate-200">
             <Shimmer className="h-4 w-20" />
           </div>
         </div>
@@ -31,11 +29,10 @@ function GridSkeleton() {
   );
 }
 
-// ─── Error Banner ─────────────────────────────────────────────────────────────
 function ErrorBanner({ message, onRetry }) {
   return (
-    <div className="bg-himalayan-mist border border-status-broken/30 p-6 flex items-start gap-4">
-      <AlertTriangle className="w-5 h-5 text-status-broken shrink-0 mt-0.5" />
+    <div className="bg-white border border-red-200 p-6 flex items-start gap-4 rounded text-left">
+      <AlertTriangle className="w-5 h-5 text-nepal-red shrink-0 mt-0.5" />
       <div className="flex-1">
         <p className="text-sm font-semibold text-pagoda-wood mb-1">Failed to load representatives</p>
         <p className="text-sm text-slate-basalt">{message}</p>
@@ -43,7 +40,7 @@ function ErrorBanner({ message, onRetry }) {
       {onRetry && (
         <button
           onClick={onRetry}
-          className="text-xs uppercase tracking-wider font-semibold text-temple-brass hover:text-pagoda-wood transition-colors shrink-0"
+          className="text-xs uppercase tracking-wider font-bold text-nepal-red hover:text-pagoda-wood transition-colors shrink-0"
         >
           Retry
         </button>
@@ -52,229 +49,210 @@ function ErrorBanner({ message, onRetry }) {
   );
 }
 
-// ─── Representative Card ──────────────────────────────────────────────────────
 function RepCard({ rep }) {
   const constituency = rep.constituency || {};
 
   return (
     <Link
       to={`/representative/${rep.id}`}
-      className="bg-himalayan-mist border border-dust-beige p-6 hover:bg-weathered-stone hover:border-temple-brass/40 transition-all group flex flex-col gap-3"
+      className="bg-white border border-slate-200 p-6 hover:border-nepal-red transition-all group flex flex-col gap-3 rounded shadow-sm hover:shadow"
     >
-      {/* Header */}
       <div>
-        <h2 className="text-lg font-serif text-pagoda-wood group-hover:text-temple-brass transition-colors leading-snug">
+        <h2 className="text-base font-bold text-pagoda-wood group-hover:text-nepal-red transition-colors leading-snug">
           {rep.name}
         </h2>
-        <p className="text-xs uppercase tracking-wider font-semibold text-slate-basalt/60 mt-0.5">
+        <p className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 mt-0.5">
           {rep.party}
         </p>
       </div>
 
-      {/* Meta */}
-      <div className="space-y-1 text-sm text-slate-basalt">
+      <div className="space-y-1.5 text-xs text-slate-600 font-medium">
         {rep.position && (
-          <p className="font-medium">{rep.position}</p>
+          <p className="font-semibold text-slate-700">{rep.position}</p>
         )}
         {constituency.name && (
-          <p>
-            <span className="text-slate-basalt/50">Constituency: </span>
+          <p className="flex items-center gap-1">
+            <span className="text-slate-400 font-bold uppercase text-[9px]">Const:</span>
             {constituency.name}
-            {constituency.province && (
-              <span className="text-slate-basalt/50"> — P{constituency.province}</span>
-            )}
           </p>
         )}
         {rep.attendancePercent != null && (
-          <p>
-            <span className="text-slate-basalt/50">Attendance: </span>
+          <p className="flex items-center gap-1">
+            <span className="text-slate-400 font-bold uppercase text-[9px]">Attendance:</span>
             {rep.attendancePercent}%
           </p>
         )}
       </div>
 
-      {/* Rating footer */}
-      <div className="mt-auto pt-4 border-t border-dust-beige flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <RatingStars rating={Math.round(rep.averageRating || 0)} />
-          <span className="text-xs text-slate-basalt/50">
-            {rep.averageRating ? rep.averageRating.toFixed(1) : 'No ratings'} · {rep.ratingsCount || 0} review{rep.ratingsCount !== 1 ? 's' : ''}
+      <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+        <div className="flex flex-col gap-0.5">
+          <RatingStars rating={Math.round(rep.averageRating || rep.ratingValue || 4)} />
+          <span className="text-[9px] text-slate-400 font-bold uppercase">
+            Rating: {(rep.averageRating || rep.ratingValue || 4.0)}
           </span>
         </div>
-        <ChevronRight className="w-4 h-4 text-slate-basalt/30 group-hover:text-temple-brass transition-colors" />
+        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-nepal-red transition-colors" />
       </div>
     </Link>
   );
 }
 
-// ─── Province filter options ──────────────────────────────────────────────────
-const PROVINCES = ['All', '1', '2', 'Bagmati', 'Gandaki', 'Lumbini', 'Karnali', 'Sudurpashchim'];
-
-// ─── Main Directory Page ──────────────────────────────────────────────────────
 export default function RepresentativeDirectory() {
-  const [reps,         setReps]         = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState(null);
+  const [reps, setReps] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [constituencies, setConstituencies] = useState([]);
+  const [search, setSearch] = useState('');
+  const [partyFilter, setPartyFilter] = useState('');
+  const [provinceFilter, setProvinceFilter] = useState('');
 
-  const [searchQuery,   setSearchQuery]   = useState('');
-  const [selectedParty, setSelectedParty] = useState('All');
-  const [selectedProv,  setSelectedProv]  = useState('All');
-  const [selectedCons,  setSelectedCons]  = useState('All');
-
-  const fetchReps = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await representativesAPI.getAll();
-      setReps(Array.isArray(data) ? data : []);
+      setReps(Array.isArray(data) ? data : data.representatives || []);
     } catch (err) {
-      setError(err?.response?.data?.error || 'Could not load the representative directory.');
+      setError(err?.response?.data?.error || 'Failed to fetch the representatives registry.');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const fetchConstituencies = useCallback(async () => {
-    try {
-      const data = await constituenciesAPI.getAll();
-      setConstituencies(Array.isArray(data) ? data : []);
-    } catch {
-      // non-critical — filters degrade gracefully
-    }
-  }, []);
-
   useEffect(() => {
-    fetchReps();
-    fetchConstituencies();
-  }, [fetchReps, fetchConstituencies]);
+    loadData();
+  }, [loadData]);
 
-  // Derive unique parties from loaded data
-  const parties = useMemo(() => {
-    const set = new Set(reps.map(r => r.party).filter(Boolean));
-    return ['All', ...Array.from(set).sort()];
+  const uniqueParties = useMemo(() => {
+    const parties = reps.map(r => r.party).filter(Boolean);
+    return Array.from(new Set(parties)).sort();
   }, [reps]);
 
-  // Client-side filter chain
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return reps.filter(rep => {
-      if (q && !rep.name.toLowerCase().includes(q) && !(rep.party || '').toLowerCase().includes(q)) return false;
-      if (selectedParty !== 'All' && rep.party !== selectedParty) return false;
-      if (selectedProv !== 'All' && String(rep.constituency?.province) !== selectedProv) return false;
-      if (selectedCons !== 'All' && String(rep.constituency?.id) !== selectedCons) return false;
-      return true;
+  const uniqueProvinces = useMemo(() => {
+    const provinces = reps.map(r => r.constituency?.province).filter(Boolean);
+    return Array.from(new Set(provinces)).sort();
+  }, [reps]);
+
+  const filteredReps = useMemo(() => {
+    return reps.filter(r => {
+      const matchesSearch =
+        r.name.toLowerCase().includes(search.toLowerCase()) ||
+        (r.constituency?.name || '').toLowerCase().includes(search.toLowerCase());
+      const matchesParty = !partyFilter || r.party === partyFilter;
+      const matchesProvince = !provinceFilter || r.constituency?.province === provinceFilter;
+      return matchesSearch && matchesParty && matchesProvince;
     });
-  }, [reps, searchQuery, selectedParty, selectedProv, selectedCons]);
+  }, [reps, search, partyFilter, provinceFilter]);
 
   return (
-    <div className="min-h-screen bg-himalayan-mist text-slate-basalt pb-20">
-      {/* ── Page header ─────────────────────────────────────────── */}
-      <div className="bg-weathered-stone border-b border-dust-beige py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start gap-4 mb-6">
-            <Users className="w-8 h-8 text-temple-brass shrink-0 mt-1" />
-            <div>
-              <h1 className="text-4xl font-serif text-pagoda-wood">Representative Directory</h1>
-              <p className="text-slate-basalt/70 mt-2 text-sm leading-relaxed max-w-xl">
-                Browse elected representatives of Nepal. Click any profile to view their full Report Card — promises, attendance, citizen ratings, and legislative record.
-              </p>
-            </div>
-          </div>
-
-          {/* ── Filter bar ──────────────────────────────────────── */}
-          <div className="flex flex-wrap gap-3 mt-6">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[220px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-basalt/40 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search by name or party…"
-                className="w-full pl-9 pr-3 py-2 bg-himalayan-mist border border-dust-beige text-sm text-slate-basalt placeholder:text-slate-basalt/40 focus:outline-none focus:border-temple-brass transition-colors"
-                aria-label="Search representatives"
-              />
-            </div>
-
-            {/* Party filter */}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-basalt/40 pointer-events-none" />
-              <select
-                value={selectedParty}
-                onChange={e => setSelectedParty(e.target.value)}
-                className="pl-9 pr-8 py-2 bg-himalayan-mist border border-dust-beige text-sm text-slate-basalt focus:outline-none focus:border-temple-brass transition-colors appearance-none cursor-pointer"
-                aria-label="Filter by party"
-              >
-                {parties.map(p => <option key={p} value={p}>{p === 'All' ? 'All Parties' : p}</option>)}
-              </select>
-            </div>
-
-            {/* Province filter */}
-            <select
-              value={selectedProv}
-              onChange={e => { setSelectedProv(e.target.value); setSelectedCons('All'); }}
-              className="px-3 py-2 bg-himalayan-mist border border-dust-beige text-sm text-slate-basalt focus:outline-none focus:border-temple-brass transition-colors appearance-none cursor-pointer"
-              aria-label="Filter by province"
-            >
-              {PROVINCES.map(p => <option key={p} value={p}>{p === 'All' ? 'All Provinces' : `Province ${p}`}</option>)}
-            </select>
-
-            {/* Constituency filter (populated from API) */}
-            {constituencies.length > 0 && (
-              <select
-                value={selectedCons}
-                onChange={e => setSelectedCons(e.target.value)}
-                className="px-3 py-2 bg-himalayan-mist border border-dust-beige text-sm text-slate-basalt focus:outline-none focus:border-temple-brass transition-colors appearance-none cursor-pointer max-w-[200px]"
-                aria-label="Filter by constituency"
-              >
-                <option value="All">All Constituencies</option>
-                {constituencies
-                  .filter(c => selectedProv === 'All' || String(c.province) === selectedProv)
-                  .map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)
-                }
-              </select>
-            )}
-          </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans text-left">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-slate-200 pb-6">
+        <div>
+          <h1 className="text-3xl font-serif text-pagoda-wood font-extrabold tracking-tight">
+            Elected Representatives Directory
+          </h1>
+          <p className="text-sm text-slate-basalt/70 mt-1 leading-relaxed">
+            Verify official report cards, attendance rates, voting logs, and promise audits.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold uppercase rounded">
+          <Users className="w-4 h-4 text-nepal-red" /> {filteredReps.length} Representatives Mapped
         </div>
       </div>
 
-      {/* ── Body ────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {loading && <GridSkeleton />}
+      {error ? (
+        <ErrorBanner message={error} onRetry={loadData} />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          
+          {/* Sidebar Filters */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white p-5 border border-slate-200 rounded shadow-sm space-y-5">
+              <div className="flex items-center gap-2 text-pagoda-wood border-b border-slate-100 pb-2.5">
+                <Filter className="w-4 h-4 text-nepal-red" />
+                <h3 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">Search &amp; Filters</h3>
+              </div>
 
-        {!loading && error && <ErrorBanner message={error} onRetry={fetchReps} />}
+              {/* Search input */}
+              <div className="space-y-1">
+                <label className="block text-[9px] font-bold uppercase text-slate-400 tracking-wider">Search Keyword</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search name or constituency..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 py-2.5 pl-3 pr-10 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3.5" />
+                </div>
+              </div>
 
-        {!loading && !error && (
-          <>
-            <div className="flex justify-between items-center mb-8 pb-4 border-b border-dust-beige">
-              <p className="text-sm font-semibold text-slate-basalt/60 uppercase tracking-wider">
-                {filtered.length} of {reps.length} representative{reps.length !== 1 ? 's' : ''}
-              </p>
-              {(searchQuery || selectedParty !== 'All' || selectedProv !== 'All' || selectedCons !== 'All') && (
-                <button
-                  onClick={() => { setSearchQuery(''); setSelectedParty('All'); setSelectedProv('All'); setSelectedCons('All'); }}
-                  className="text-xs uppercase tracking-wider font-semibold text-temple-brass hover:text-pagoda-wood transition-colors"
+              {/* Party selection */}
+              <div className="space-y-1">
+                <label className="block text-[9px] font-bold uppercase text-slate-400 tracking-wider">Filter by Party</label>
+                <select
+                  value={partyFilter}
+                  onChange={e => setPartyFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 py-2.5 px-3 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
                 >
-                  Clear Filters
-                </button>
-              )}
-            </div>
+                  <option value="">All Political Parties</option>
+                  {uniqueParties.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
 
-            {filtered.length === 0 ? (
-              <div className="bg-weathered-stone border border-dust-beige p-12 text-center">
-                <p className="text-lg font-serif text-pagoda-wood mb-2">No representatives found</p>
-                <p className="text-sm text-slate-basalt/60">Try adjusting your search or filters.</p>
+              {/* Province selection */}
+              <div className="space-y-1">
+                <label className="block text-[9px] font-bold uppercase text-slate-400 tracking-wider">Filter by Province</label>
+                <select
+                  value={provinceFilter}
+                  onChange={e => setProvinceFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 py-2.5 px-3 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
+                >
+                  <option value="">All Provinces</option>
+                  {uniqueProvinces.map(prov => (
+                    <option key={prov} value={prov}>{prov}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={() => {
+                  setSearch('');
+                  setPartyFilter('');
+                  setProvinceFilter('');
+                }}
+                className="w-full py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[10px] font-extrabold uppercase rounded transition-colors text-slate-700"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+
+          {/* Grid display */}
+          <div className="lg:col-span-3">
+            {loading ? (
+              <GridSkeleton />
+            ) : filteredReps.length === 0 ? (
+              <div className="bg-white border border-slate-200 p-8 rounded text-center text-xs text-slate-400 font-semibold italic">
+                No matching representatives found. Please adjust search parameters.
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filtered.map(rep => <RepCard key={rep.id} rep={rep} />)}
+                {filteredReps.map(rep => (
+                  <RepCard key={rep.id} rep={rep} />
+                ))}
               </div>
             )}
-          </>
-        )}
-      </div>
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }

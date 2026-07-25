@@ -1,3 +1,7 @@
+/**
+ * District Model representing Nepal's administrative divisions (77 Districts).
+ * Stores CDO, assistant CDO, DAO details, and demographic indicators.
+ */
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 

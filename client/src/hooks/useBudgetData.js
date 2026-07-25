@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { budgetAPI } from '../api';
 
 export const useBudgetData = (regionId = 'all') => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState({
+    overview: [],
+    trends: [],
+    districtComparison: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -19,7 +23,9 @@ export const useBudgetData = (regionId = 'all') => {
     budgetAPI.getAll(params)
       .then((projects) => {
         if (!isMounted) return;
-        const mappedData = projects.map(proj => {
+        
+        // 1. Overview (Project level)
+        const overview = projects.map(proj => {
           const allocated = Number(proj.allocatedAmount) || 0;
           const completionPercent = Number(proj.completionPercent) || 0;
           const completed = allocated * (completionPercent / 100);
@@ -30,7 +36,36 @@ export const useBudgetData = (regionId = 'all') => {
             hasMismatch: proj.evidenceStatus !== 'verified'
           };
         });
-        setData(mappedData);
+
+        // 2. District Comparison
+        const districtMap = {};
+        projects.forEach(proj => {
+          const districtName = proj.district ? proj.district.name : 'Unknown';
+          if (!districtMap[districtName]) {
+            districtMap[districtName] = { name: districtName, allocated: 0, completed: 0 };
+          }
+          const allocated = Number(proj.allocatedAmount) || 0;
+          const completionPercent = Number(proj.completionPercent) || 0;
+          districtMap[districtName].allocated += allocated;
+          districtMap[districtName].completed += allocated * (completionPercent / 100);
+        });
+        const districtComparison = Object.values(districtMap);
+
+        // 3. Trends (Yearly)
+        const trendsMap = {};
+        projects.forEach(proj => {
+          const year = proj.createdAt ? new Date(proj.createdAt).getFullYear().toString() : '2023';
+          if (!trendsMap[year]) {
+            trendsMap[year] = { year, allocated: 0, completed: 0 };
+          }
+          const allocated = Number(proj.allocatedAmount) || 0;
+          const completionPercent = Number(proj.completionPercent) || 0;
+          trendsMap[year].allocated += allocated;
+          trendsMap[year].completed += allocated * (completionPercent / 100);
+        });
+        const trends = Object.values(trendsMap).sort((a, b) => a.year.localeCompare(b.year));
+
+        setData({ overview, districtComparison, trends });
       })
       .catch((err) => {
         if (!isMounted) return;

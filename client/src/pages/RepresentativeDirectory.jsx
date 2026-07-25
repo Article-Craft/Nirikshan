@@ -133,6 +133,7 @@ export default function RepresentativeDirectory() {
     return Array.from(new Set(provinces)).sort();
   }, [reps]);
 
+  // Memoized filter checks to prevent redundant layout reflows on search query changes
   const filteredReps = useMemo(() => {
     return reps.filter(r => {
       const matchesSearch =

@@ -137,6 +137,7 @@ export default function App() {
 
           {/* Page Content */}
           <main className="flex-grow">
+            {/* Client-side routing configuration for Nirikshan */}
             <Routes>
               <Route path="/" element={<LandingPage setUser={setUser} />} />
               <Route path="/promises" element={<Dashboard user={user} />} />

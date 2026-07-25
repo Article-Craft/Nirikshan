@@ -1,7 +1,33 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Shield, FileText, Map, BarChart3, AlertTriangle, ArrowRight, CheckCircle2, KeyRound, UserPlus, Landmark, Users, Mail, Phone, MapPin, Globe } from 'lucide-react';
-import { authAPI } from '../api';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { 
+  Shield, FileText, Map, BarChart3, AlertTriangle, ArrowRight, 
+  CheckCircle2, KeyRound, UserPlus, Landmark, Users, Mail, Phone, 
+  MapPin, Globe, Search, Heart, Award, Sparkles, Building, AlertCircle
+} from 'lucide-react';
+import { authAPI, districtsAPI, constituenciesAPI, representativesAPI } from '../api';
+
+export const PARTIES = {
+  'NC': { name: 'Nepali Congress', short: 'NC', color: '#1E3A8A' },
+  'CPN (UML)': { name: 'CPN (UML)', short: 'UML', color: '#DC2626' },
+  'RSP': { name: 'Rastriya Swatantra Party', short: 'RSP', color: '#2563EB' },
+  'CPN (Maoist Centre)': { name: 'CPN (Maoist Centre)', short: 'MC', color: '#991B1B' },
+  'RPP': { name: 'Rastriya Prajatantra Party', short: 'RPP', color: '#D97706' },
+  'Independent': { name: 'Independent', short: 'IND', color: '#4B5563' }
+};
+
+const normalizeName = (name) => {
+  if (!name) return '';
+  let n = name.toUpperCase().trim();
+  if (n === 'KAVREPALANCHOWK') return 'KAVREPALANCHOK';
+  if (n === 'DHANUSA') return 'DHANUSHA';
+  if (n === 'TANAHU') return 'TANAHUN';
+  if (n === 'PARASI') return 'NAWALPARASI';
+  if (n === 'TEHRATHUM') return 'TERHATHUM';
+  return n;
+};
 
 export default function LandingPage({ setUser }) {
   const navigate = useNavigate();
@@ -14,34 +40,180 @@ export default function LandingPage({ setUser }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Map and Data states
+  const [geoJsonData, setGeoJsonData] = useState(null);
+  const [districtsList, setDistrictsList] = useState([]);
+  const [constituenciesList, setConstituenciesList] = useState([]);
+  const [representativesList, setRepresentativesList] = useState([]);
+  const [mapLoading, setMapLoading] = useState(true);
+
+  // Selected district for detail modal/drawer
+  const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [showDistrictPortal, setShowDistrictPortal] = useState(false);
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const mapRef = useRef(null);
+  const leafletMapInstance = useRef(null);
+  const geojsonLayerRef = useRef(null);
+
+  // Fetch data
+  useEffect(() => {
+    Promise.all([
+      fetch('/data/nepal-districts.json').then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch map data');
+        return res.json();
+      }),
+      districtsAPI.getAll(),
+      constituenciesAPI.getAll(),
+      representativesAPI.getAll()
+    ])
+      .then(([geoJson, districts, constituencies, representatives]) => {
+        setGeoJsonData(geoJson);
+        setDistrictsList(districts);
+        setConstituenciesList(constituencies);
+        setRepresentativesList(representatives);
+        setMapLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error loading map data on home:', err);
+        setMapLoading(false);
+      });
+  }, []);
+
+  // Initialize Map
+  useEffect(() => {
+    if (!mapRef.current || mapLoading || !geoJsonData) return;
+
+    leafletMapInstance.current = L.map(mapRef.current, {
+      center: [28.3949, 84.1240], // Center of Nepal
+      zoom: 6.5,
+      minZoom: 6,
+      maxZoom: 9,
+      zoomControl: true,
+      attributionControl: false,
+      scrollWheelZoom: false
+    });
+
+    const map = leafletMapInstance.current;
+
+    const getStyle = (feature) => {
+      return {
+        fillColor: '#FFFFFF',
+        weight: 1,
+        opacity: 0.8,
+        color: '#94A3B8', // slate-300
+        fillOpacity: 0.9
+      };
+    };
+
+    const onEachFeature = (feature, layer) => {
+      const distName = feature.properties.DISTRICT || feature.properties.name || '';
+      const formattedName = distName.charAt(0) + distName.slice(1).toLowerCase();
+      
+      // Match with database district record
+      const normalizedFeatureName = normalizeName(distName);
+      const matchedDistrict = districtsList.find(d => normalizeName(d.name) === normalizedFeatureName);
+
+      // Tooltip HTML content
+      let tooltipContent = `<div class="p-2.5 font-sans text-xs">`;
+      tooltipContent += `<div class="font-bold text-pagoda-wood text-sm">${formattedName} District</div>`;
+      tooltipContent += `<div class="text-slate-basalt/80 mt-1">Province: ${matchedDistrict?.province || 'Unavailable'}</div>`;
+      tooltipContent += `<div class="text-slate-basalt/80">Population: ${matchedDistrict?.population || 'Unavailable'}</div>`;
+      
+      if (matchedDistrict?.cdoName) {
+        tooltipContent += `<div class="mt-1.5 pt-1.5 border-t border-slate-200 text-slate-basalt"><span class="font-semibold text-nepal-red">CDO:</span> ${matchedDistrict.cdoName}</div>`;
+      } else {
+        tooltipContent += `<div class="mt-1.5 pt-1.5 border-t border-slate-200 text-amber-700 italic">CDO details pending official verification</div>`;
+      }
+
+      if (matchedDistrict?.mayorName) {
+        tooltipContent += `<div class="text-slate-basalt"><span class="font-semibold text-temple-brass">Mayor:</span> ${matchedDistrict.mayorName}</div>`;
+      }
+      
+      tooltipContent += `</div>`;
+
+      layer.bindTooltip(tooltipContent, {
+        sticky: true,
+        direction: 'auto',
+        className: 'leaflet-custom-tooltip'
+      });
+
+      layer.on({
+        mouseover: (e) => {
+          const l = e.target;
+          l.setStyle({
+            weight: 2,
+            color: '#DC2626', // Nepal Red
+            fillColor: '#FEF2F2', // Soft Red Tint
+            fillOpacity: 0.95
+          });
+          l.bringToFront();
+        },
+        mouseout: (e) => {
+          geojsonLayerRef.current.resetStyle(e.target);
+        },
+        click: () => {
+          if (matchedDistrict) {
+            setSelectedDistrict(matchedDistrict);
+            setShowDistrictPortal(true);
+          } else {
+            // For unverified districts, show basic details
+            setSelectedDistrict({
+              name: formattedName,
+              province: matchedDistrict?.province || 'Unavailable',
+              daoAddress: null,
+              cdoName: null
+            });
+            setShowDistrictPortal(true);
+          }
+        }
+      });
+    };
+
+    geojsonLayerRef.current = L.geoJSON(geoJsonData, {
+      style: getStyle,
+      onEachFeature: onEachFeature
+    }).addTo(map);
+
+    try {
+      const bounds = geojsonLayerRef.current.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [10, 10] });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    return () => {
+      if (leafletMapInstance.current) {
+        leafletMapInstance.current.remove();
+        leafletMapInstance.current = null;
+      }
+    };
+  }, [mapLoading, geoJsonData, districtsList]);
+
+  // Handle Quick Login
+  const handleQuickFill = (role) => {
+    setActiveTab('login');
+    setEmail(`demo_${role}@nirikshan.gov.np`);
+    setPassword('password123');
+    // Scroll to login card
+    document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Submit Login/Signup Form
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Client-side validations
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
 
     if (!trimmedEmail || !trimmedPassword) {
       setError('Please fill in all credentials.');
-      return;
-    }
-
-    if (activeTab === 'signup') {
-      const trimmedName = name.trim();
-      if (!trimmedName || trimmedName.length < 2) {
-        setError('Please enter a valid name (minimum 2 characters).');
-        return;
-      }
-      if (trimmedPassword.length < 6) {
-        setError('Password must be at least 6 characters.');
-        return;
-      }
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      setError('Please provide a valid email address.');
       return;
     }
 
@@ -62,203 +234,163 @@ export default function LandingPage({ setUser }) {
     } catch (err) {
       console.error(err);
       if (!err.response) {
-        setError('Unable to connect to the backend server. Please verify the backend service is running on http://localhost:5000');
+        setError('Unable to connect to the backend server. Please verify the backend is running.');
       } else {
-        setError(err.response?.data?.error || 'Authentication failed. Please verify your credentials.');
+        setError(err.response?.data?.error || 'Authentication failed.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickFill = (role) => {
-    setActiveTab('login');
-    setEmail(`demo_${role}@nirikshan.gov.np`);
-    setPassword('password123');
+  // Global Search logic
+  const filteredSuggestions = useMemo(() => {
+    if (!searchQuery) return [];
+    const query = searchQuery.toLowerCase().trim();
+
+    const matchedDistricts = districtsList
+      .filter(d => d.name.toLowerCase().includes(query))
+      .map(d => ({
+        type: 'district',
+        name: d.name,
+        label: `${d.name} (District)`,
+        data: d
+      }));
+
+    const matchedReps = representativesList
+      .filter(r => r.name.toLowerCase().includes(query))
+      .map(r => ({
+        type: 'representative',
+        name: r.name,
+        label: `${r.name} (${PARTIES[r.party]?.short || 'MP'})`,
+        data: r
+      }));
+
+    return [...matchedDistricts, ...matchedReps].slice(0, 6);
+  }, [searchQuery, districtsList, representativesList]);
+
+  // Click Suggestion
+  const handleSelectSuggestion = (s) => {
+    setSearchQuery('');
+    setShowSuggestions(false);
+    if (s.type === 'district') {
+      setSelectedDistrict(s.data);
+      setShowDistrictPortal(true);
+    } else if (s.type === 'representative') {
+      navigate(`/representative/${s.data.id}`);
+    }
   };
 
+  // Find representative matching clicked district
+  const matchedRepsForDistrict = useMemo(() => {
+    if (!selectedDistrict) return [];
+    // Get constituencies in selected district
+    const cIds = constituenciesList
+      .filter(c => c.districtId === selectedDistrict.id)
+      .map(c => c.id);
+    return representativesList.filter(r => cIds.includes(r.constituencyId));
+  }, [selectedDistrict, constituenciesList, representativesList]);
+
   return (
-    <div className="min-h-screen bg-himalayan-mist flex flex-col text-slate-basalt selection:bg-temple-brass selection:text-white">
-      {/* Premium Gradient Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-pagoda-wood to-slate-basalt text-himalayan-mist py-24 sm:py-32 border-b border-temple-brass/30">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#9C7A3C_1.5px,transparent_1.5px)] [background-size:24px_24px]"></div>
-
-        {/* Subtle Nepal Map Background */}
-        <div className="absolute inset-y-0 right-0 w-full lg:w-3/5 opacity-[0.12] pointer-events-none select-none flex items-center justify-center lg:justify-end pr-0 lg:pr-8 z-0">
-          <img
-            src="/nepal-map.svg"
-            alt="Nepal Map Outline"
-            className="h-full max-h-[90%] w-auto object-contain"
-          />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div className="min-h-screen bg-[#FAF9F6] text-slate-basalt selection:bg-nepal-red selection:text-white font-sans">
+      
+      {/* Editorial Hero Layout */}
+      <div className="relative border-b border-slate-200 bg-[#FFFFFF]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-
+            
             {/* Left Column: Vision & Brand */}
-            <div className="lg:col-span-7 space-y-8">
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-white/5 border border-white/10 text-temple-brass text-xs font-bold uppercase tracking-widest rounded-full backdrop-blur-sm shadow-inner select-none animate-pulse">
-                <Landmark className="w-4 h-4" /> Official Civic Watchdog Portal
+            <div className="lg:col-span-6 space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold uppercase tracking-wider rounded-sm">
+                <Landmark className="w-3.5 h-3.5 text-nepal-red" />
+                NEPAL CIVIC INTEGRITY PORTAL
               </div>
 
-              <div className="space-y-6">
-                <div className="flex items-center gap-6 flex-wrap">
-                  <img src="/logo.png" alt="Nirikshan Logo" className="w-24 h-24 object-contain rounded-full p-2.5 bg-white border-2 border-temple-brass shadow-2xl transition-transform hover:rotate-6 hover:scale-110 duration-300" />
-                  <div>
-                    <h1 className="text-5xl sm:text-6xl font-serif font-extrabold text-himalayan-mist leading-none tracking-tight drop-shadow-md">
-                      NIRIKSHAN
-                    </h1>
-                    <span className="font-sans font-medium text-2xl tracking-widest text-temple-brass block mt-1">निरीक्षण</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-pagoda-wood leading-tight tracking-tight">
+                Nepal's Civic Accountability Platform.
+              </h1>
+              
+              <p className="text-lg text-slate-basalt/80 font-normal leading-relaxed max-w-xl">
+                Track leaders. Monitor promises. Report local issues. Follow public progress. Nirikshan is a dedicated, data-first civic portal ensuring total transparency in municipal budgets, constituency development, and administrative accountability.
+              </p>
+
+              {/* Powerful Search Bar */}
+              <div className="relative max-w-lg">
+                <div className="flex items-center border-2 border-pagoda-wood rounded bg-white shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-nepal-red/20 focus-within:border-nepal-red">
+                  <div className="pl-3">
+                    <Search className="w-5 h-5 text-slate-400" />
                   </div>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    placeholder="Search district, representative, or promises..."
+                    className="w-full py-3.5 px-3 text-sm font-medium focus:outline-none bg-transparent"
+                  />
                 </div>
 
-                <p className="text-xl text-himalayan-mist/95 font-serif leading-relaxed max-w-2xl border-l-4 border-temple-brass pl-6 italic">
-                  "Empowering citizens through rigorous tracking of municipal performance, transparent governance monitoring, and active accountability infrastructures across Nepal."
-                </p>
+                {/* Suggestions dropdown */}
+                {showSuggestions && filteredSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 overflow-hidden">
+                    {filteredSuggestions.map((s, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSelectSuggestion(s)}
+                        className="w-full text-left px-4 py-3 hover:bg-slate-50 text-xs font-semibold flex justify-between items-center border-b border-slate-100 last:border-0"
+                      >
+                        <span className="text-pagoda-wood">{s.label}</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Statistics Panel */}
-              <div className="grid grid-cols-3 gap-6 py-8 border-y border-white/10">
-                <div className="space-y-1 group cursor-default">
-                  <div className="text-4xl font-extrabold text-temple-brass font-serif transition-transform duration-300 group-hover:scale-105">165</div>
-                  <div className="text-[10px] text-himalayan-mist/70 uppercase tracking-widest font-bold">FPTP Constituencies</div>
-                </div>
-                <div className="space-y-1 group cursor-default">
-                  <div className="text-4xl font-extrabold text-temple-brass font-serif transition-transform duration-300 group-hover:scale-105">100%</div>
-                  <div className="text-[10px] text-himalayan-mist/70 uppercase tracking-widest font-bold">Verified Audit Logs</div>
-                </div>
-                <div className="space-y-1 group cursor-default">
-                  <div className="text-4xl font-extrabold text-temple-brass font-serif transition-transform duration-300 group-hover:scale-105">7</div>
-                  <div className="text-[10px] text-himalayan-mist/70 uppercase tracking-widest font-bold">Provinces Mapped</div>
+              {/* Quick Actions Grid */}
+              <div className="space-y-3 pt-2">
+                <div className="text-xs uppercase tracking-widest font-bold text-slate-400">Quick Actions</div>
+                <div className="flex flex-wrap gap-2.5">
+                  <Link to="/directory" className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 text-xs font-semibold rounded text-slate-700 transition-colors">
+                    View Election Results
+                  </Link>
+                  <Link to="/map" className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 text-xs font-semibold rounded text-slate-700 transition-colors">
+                    Explore Nepal Map
+                  </Link>
+                  <Link to="/promises" className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 text-xs font-semibold rounded text-slate-700 transition-colors">
+                    Track Promises
+                  </Link>
+                  <Link to="/rti" className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 text-xs font-semibold rounded text-slate-700 transition-colors">
+                    Report an Issue
+                  </Link>
                 </div>
               </div>
 
-              {/* Compliance Badges */}
-              <div className="flex flex-wrap gap-4 text-sm text-himalayan-mist/70">
-                <div className="flex items-center gap-2 bg-white/5 hover:bg-white/10 transition-colors px-3.5 py-2 rounded border border-white/10">
-                  <CheckCircle2 className="w-4 h-4 text-temple-brass" />
-                  <span className="font-medium">ECN Dataset Compliant</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/5 hover:bg-white/10 transition-colors px-3.5 py-2 rounded border border-white/10">
-                  <CheckCircle2 className="w-4 h-4 text-temple-brass" />
-                  <span className="font-medium">RTI Act Framework</span>
-                </div>
-              </div>
             </div>
 
-            {/* Right Column: Sleek Auth Card */}
-            <div className="lg:col-span-5 w-full">
-              <div className="bg-white text-slate-basalt border-2 border-temple-brass/25 rounded shadow-2xl overflow-hidden transition-all duration-300 hover:shadow-temple-brass/10">
-                <div className="h-2 bg-gradient-to-r from-temple-brass via-pagoda-wood to-temple-brass"></div>
-
-                <div className="p-8">
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-serif font-bold text-pagoda-wood">Citizen Access Portal</h3>
-                    <p className="text-xs text-slate-basalt/60 mt-1">Authenticate credentials or create an account to begin audit logs inspection</p>
-                  </div>
-
-                  {/* Clean Tab Switcher */}
-                  <div className="flex bg-himalayan-mist p-1 rounded-sm mb-6 border border-dust-beige/30">
-                    <button
-                      type="button"
-                      onClick={() => { setActiveTab('login'); setError(''); }}
-                      className={`flex-1 py-2 text-xs uppercase tracking-wider font-bold transition-all rounded-sm ${activeTab === 'login' ? 'bg-pagoda-wood text-himalayan-mist shadow-sm' : 'text-slate-basalt/60 hover:text-slate-basalt'}`}
-                    >
-                      Sign In
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setActiveTab('signup'); setError(''); }}
-                      className={`flex-1 py-2 text-xs uppercase tracking-wider font-bold transition-all rounded-sm ${activeTab === 'signup' ? 'bg-pagoda-wood text-himalayan-mist shadow-sm' : 'text-slate-basalt/60 hover:text-slate-basalt'}`}
-                    >
-                      Register
-                    </button>
-                  </div>
-
-                  {error && (
-                    <div className="mb-4 bg-status-broken/10 border border-status-broken/20 text-status-broken px-4 py-2.5 text-xs font-semibold rounded-sm">
-                      {error}
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    {activeTab === 'signup' && (
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-basalt/70 mb-1">Full Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Ashmit Giri"
-                          className="w-full bg-himalayan-mist/40 border border-dust-beige py-2.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass focus:border-temple-brass rounded-sm"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-basalt/70 mb-1">Email Address</label>
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="citizen@nirikshan.gov.np"
-                        className="w-full bg-himalayan-mist/40 border border-dust-beige py-2.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass focus:border-temple-brass rounded-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-basalt/70 mb-1">Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full bg-himalayan-mist/40 border border-dust-beige py-2.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-temple-brass focus:border-temple-brass rounded-sm"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-pagoda-wood text-himalayan-mist font-semibold py-3 px-4 hover:bg-pagoda-wood/90 transition-all flex items-center justify-center gap-2 rounded-sm disabled:opacity-50 mt-6 shadow-md"
-                    >
-                      {loading ? (
-                        <span className="inline-block w-4 h-4 border-2 border-himalayan-mist border-t-transparent rounded-full animate-spin"></span>
-                      ) : (
-                        <>
-                          <span>{activeTab === 'login' ? 'Authenticate & Enter' : 'Create Account'}</span>
-                          <ArrowRight className="w-4.5 h-4.5" />
-                        </>
-                      )}
-                    </button>
-                  </form>
-
-                  {/* Helper/Demo credentials area */}
-                  <div className="mt-6 pt-6 border-t border-dust-beige/45">
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-basalt/50 mb-2">Demo Quick Sign-In</span>
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={() => handleQuickFill('citizen')}
-                        className="text-[11px] bg-himalayan-mist hover:bg-weather-stone text-pagoda-wood font-semibold py-1.5 px-3 rounded border border-dust-beige/45 transition-colors"
-                      >
-                        Citizen Account
-                      </button>
-                      <button
-                        onClick={() => handleQuickFill('moderator')}
-                        className="text-[11px] bg-himalayan-mist hover:bg-weather-stone text-pagoda-wood font-semibold py-1.5 px-3 rounded border border-dust-beige/45 transition-colors"
-                      >
-                        Moderator Account
-                      </button>
+            {/* Right Column: Centerpiece Map */}
+            <div className="lg:col-span-6 w-full flex flex-col justify-center items-center">
+              <div className="w-full bg-[#FFFFFF] border border-slate-200 rounded p-4 shadow-sm relative">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">REAL-TIME INTERACTIVE MAP</span>
+                  <span className="text-[10px] bg-red-50 text-nepal-red px-2 py-0.5 rounded font-bold uppercase border border-red-100">FPTP Districts</span>
+                </div>
+                
+                {mapLoading ? (
+                  <div className="h-[400px] w-full flex items-center justify-center bg-slate-50 rounded border border-dashed border-slate-200">
+                    <div className="flex flex-col items-center space-y-2">
+                      <span className="w-8 h-8 border-2 border-nepal-red border-t-transparent rounded-full animate-spin"></span>
+                      <span className="text-xs text-slate-400 font-semibold">Loading national GIS data...</span>
                     </div>
                   </div>
-
-                  <div className="mt-4 pt-4 border-t border-dust-beige/30 flex items-start gap-2.5">
-                    <Shield className="w-4.5 h-4.5 text-temple-brass flex-shrink-0 mt-0.5" />
-                    <p className="text-[10px] text-slate-basalt/60 leading-normal">
-                      Security warning: Access is logged. Please authenticate with official credentials.
-                    </p>
-                  </div>
+                ) : (
+                  <div ref={mapRef} className="h-[400px] w-full z-10 rounded border border-slate-100"></div>
+                )}
+                <div className="text-[11px] text-slate-400 mt-2.5 text-center leading-relaxed font-medium">
+                  Hover to preview. Click any district to open the official mini-portal.
                 </div>
               </div>
             </div>
@@ -267,177 +399,365 @@ export default function LandingPage({ setUser }) {
         </div>
       </div>
 
-      {/* Grid: Architectural Platform Sections */}
-      <section className="bg-weather-stone/30 py-24 w-full">
+      {/* District Mini-Portal Sidebar / Drawer */}
+      {showDistrictPortal && selectedDistrict && (
+        <div className="fixed inset-0 bg-pagoda-wood/40 backdrop-blur-sm z-[9999] flex justify-end transition-opacity duration-300">
+          <div className="w-full max-w-xl bg-white h-full shadow-2xl overflow-y-auto flex flex-col border-l border-slate-200 text-left">
+            
+            {/* Portal Header */}
+            <div className="p-6 border-b border-slate-100 bg-[#FAF9F6] flex justify-between items-center sticky top-0 z-10">
+              <div>
+                <span className="text-[10px] bg-nepal-red/10 text-nepal-red font-bold px-2 py-0.5 rounded uppercase">{selectedDistrict.province}</span>
+                <h2 className="text-2xl font-serif font-extrabold text-pagoda-wood mt-1">{selectedDistrict.name} District</h2>
+              </div>
+              <button 
+                onClick={() => setShowDistrictPortal(false)}
+                className="p-1 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-sm border border-slate-200"
+              >
+                Close Portal
+              </button>
+            </div>
+
+            {/* Portal Body */}
+            <div className="p-6 space-y-8 flex-grow">
+              
+              {/* Geographical Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                  <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Headquarters</div>
+                  <div className="text-sm font-bold text-pagoda-wood mt-0.5">{selectedDistrict.headquarters || 'Unavailable'}</div>
+                </div>
+                <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                  <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Area Size</div>
+                  <div className="text-sm font-bold text-pagoda-wood mt-0.5">{selectedDistrict.areaSqKm || 'Unavailable'}</div>
+                </div>
+                <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                  <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Population</div>
+                  <div className="text-sm font-bold text-pagoda-wood mt-0.5">{selectedDistrict.population || 'Unavailable'}</div>
+                </div>
+              </div>
+
+              {/* Administrative Officers */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">Administrative Secretariat</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                  
+                  {/* CDO Profile */}
+                  <div className="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                    <div className="text-[10px] font-bold text-nepal-red uppercase">Chief District Officer (CDO)</div>
+                    {selectedDistrict.cdoName ? (
+                      <div className="mt-2 space-y-1.5">
+                        <div className="text-sm font-extrabold text-pagoda-wood">{selectedDistrict.cdoName}</div>
+                        <div className="text-xs text-slate-basalt flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-slate-400" /> {selectedDistrict.daoContact || 'N/A'}</div>
+                        <div className="text-xs text-slate-basalt flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-slate-400" /> {selectedDistrict.daoEmail || 'N/A'}</div>
+                        <div className="text-xs text-slate-basalt flex items-center gap-1.5"><Building className="w-3.5 h-3.5 text-slate-400" /> {selectedDistrict.daoAddress || 'N/A'}</div>
+                        {selectedDistrict.daoWebsite && (
+                          <a href={selectedDistrict.daoWebsite} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1 font-semibold"><Globe className="w-3.5 h-3.5" /> Visit Official DAO</a>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-amber-700 italic mt-3 bg-amber-50 p-2 border border-amber-100 rounded flex gap-1.5 items-center">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" /> CDO details pending verification
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Assistant CDO & Local Govt */}
+                  <div className="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                    <div className="text-[10px] font-bold text-temple-brass uppercase">Assistant CDO & Municipalities</div>
+                    <div className="mt-2 space-y-2">
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-bold">Assistant CDO</div>
+                        <div className="text-xs font-bold text-pagoda-wood">{selectedDistrict.assistantCdo || 'Unavailable'}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                        <div>
+                          <div className="text-[9px] text-slate-400 font-bold uppercase">Municipalities</div>
+                          <div className="text-xs font-bold text-pagoda-wood">{selectedDistrict.municipalitiesCount ?? 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] text-slate-400 font-bold uppercase">Rural Mun.</div>
+                          <div className="text-xs font-bold text-pagoda-wood">{selectedDistrict.ruralMunicipalitiesCount ?? 'N/A'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Mayor & Municipal Leadership */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">Headquarters Municipality Mayor</h3>
+                <div className="bg-slate-50 p-4 border border-slate-100 rounded">
+                  {selectedDistrict.mayorName ? (
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-xs text-slate-400 font-medium">Mayor, Headquarters Municipality</div>
+                        <div className="text-base font-extrabold text-pagoda-wood mt-0.5">{selectedDistrict.mayorName}</div>
+                      </div>
+                      <span className="text-[10px] bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded">Elected Executive</span>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-amber-700 italic bg-amber-50 p-2.5 rounded border border-amber-100 flex gap-1.5 items-center">
+                      <AlertCircle className="w-4 h-4" /> Mayor records pending integration
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Representatives (MPs) */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">Elected Members of Parliament (MPs)</h3>
+                {matchedRepsForDistrict.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {matchedRepsForDistrict.map((rep) => (
+                      <Link 
+                        key={rep.id} 
+                        to={`/representative/${rep.id}`}
+                        className="bg-white p-3.5 border border-slate-200 hover:border-nepal-red rounded shadow-sm hover:shadow transition-all group flex items-center gap-3"
+                      >
+                        <img 
+                          src={rep.photoUrl || '/avatar.png'} 
+                          alt={rep.name} 
+                          className="w-10 h-10 object-cover rounded-full bg-slate-100 border border-slate-200" 
+                        />
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-pagoda-wood group-hover:text-nepal-red transition-colors">{rep.name}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">{rep.party}</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-400 italic">No representatives mapped for this district yet.</div>
+                )}
+              </div>
+
+              {/* Emergency Contacts */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">District Emergency Contacts</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-50 p-3 rounded border border-slate-100 flex items-center gap-2.5">
+                    <Phone className="w-4 h-4 text-nepal-red flex-shrink-0" />
+                    <div>
+                      <div className="text-[9px] text-slate-400 uppercase font-bold">Police Headquarters</div>
+                      <div className="text-xs font-extrabold text-pagoda-wood">{selectedDistrict.policeContact || 'Unavailable'}</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded border border-slate-100 flex items-center gap-2.5">
+                    <Phone className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <div>
+                      <div className="text-[9px] text-slate-400 uppercase font-bold">Emergency Operations</div>
+                      <div className="text-xs font-extrabold text-pagoda-wood">{selectedDistrict.emergencyContact || 'Unavailable'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Portal Footer */}
+            <div className="p-6 border-t border-slate-100 bg-slate-50 sticky bottom-0 z-10 text-center">
+              <Link 
+                to="/map" 
+                className="w-full inline-flex justify-center items-center gap-1.5 py-3 bg-pagoda-wood hover:bg-nepal-red text-white text-xs font-bold uppercase tracking-wider rounded transition-colors"
+              >
+                Go to Dedicated GIS Map Portal <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Platform Features Grid */}
+      <section className="py-16 sm:py-24 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-            <h2 className="text-3xl font-serif text-pagoda-wood font-extrabold tracking-tight sm:text-4xl">Platform Modules & Scope</h2>
-            <p className="text-sm text-slate-basalt/70 uppercase tracking-widest font-semibold">Data layers integrated into the watchdog infrastructure</p>
-            <div className="h-1 w-20 bg-temple-brass mx-auto mt-4"></div>
+          <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+            <h2 className="text-xs uppercase tracking-widest font-extrabold text-nepal-red">THE CORES OF Accountability</h2>
+            <p className="text-3xl sm:text-4xl font-serif font-extrabold text-pagoda-wood tracking-tight">
+              Providing Nepalese citizens with a decentralized government accountability audit trail.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-white p-8 border border-dust-beige/55 shadow-sm rounded-md hover:shadow-2xl hover:border-temple-brass/35 transition-all duration-300 hover:-translate-y-1.5 group flex flex-col justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {/* Feature 1 */}
+            <div className="bg-white p-6 border border-slate-200 rounded hover:shadow-md transition-all group flex flex-col justify-between text-left">
               <div>
-                <div className="w-12 h-12 bg-himalayan-mist flex items-center justify-center rounded-md mb-6 group-hover:bg-temple-brass/20 transition-all duration-300">
-                  <FileText className="w-6 h-6 text-temple-brass transition-transform group-hover:scale-110 duration-300" />
+                <div className="w-10 h-10 bg-red-50 text-nepal-red flex items-center justify-center rounded mb-5 group-hover:bg-nepal-red/10 transition-colors">
+                  <Map className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-serif font-bold text-pagoda-wood mb-3">Promise Tracker</h3>
-                <p className="text-xs text-slate-basalt/80 leading-relaxed">
-                  Maintains an audit ledger of campaign commitments and physical progress. Citizens can verify timelines, check status flags (fulfilled, delayed, or broken), and inspect source references.
+                <h3 className="text-base font-bold text-pagoda-wood mb-2">GIS Election Boundaries</h3>
+                <p className="text-xs text-slate-basalt/80 leading-relaxed text-left">
+                  Deep mapping of Nepal's 165 FPTP constituencies linked to geographic databases. Track and query local representatives directly on the map coordinates.
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-8 border border-dust-beige/55 shadow-sm rounded-md hover:shadow-2xl hover:border-temple-brass/35 transition-all duration-300 hover:-translate-y-1.5 group flex flex-col justify-between">
+            {/* Feature 2 */}
+            <div className="bg-white p-6 border border-slate-200 rounded hover:shadow-md transition-all group flex flex-col justify-between text-left">
               <div>
-                <div className="w-12 h-12 bg-himalayan-mist flex items-center justify-center rounded-md mb-6 group-hover:bg-temple-brass/20 transition-all duration-300">
-                  <Map className="w-6 h-6 text-temple-brass transition-transform group-hover:scale-110 duration-300" />
+                <div className="w-10 h-10 bg-amber-50 text-amber-700 flex items-center justify-center rounded mb-5 group-hover:bg-amber-100 transition-colors">
+                  <BarChart3 className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-serif font-bold text-pagoda-wood mb-3">Interactive Election Map</h3>
-                <p className="text-xs text-slate-basalt/80 leading-relaxed">
-                  Renders interactive GIS boundaries mapping Nepal's 165 FPTP constituencies with real 2026 election data, providing contact files for elected MPs and local Chief District Officers.
+                <h3 className="text-base font-bold text-pagoda-wood mb-2">Budget & Progress Visualizer</h3>
+                <p className="text-xs text-slate-basalt/80 leading-relaxed text-left">
+                  Cross-references development budget allocation files with project completion percentages. Identifies allocation anomalies and progress delays.
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-8 border border-dust-beige/55 shadow-sm rounded-md hover:shadow-2xl hover:border-temple-brass/35 transition-all duration-300 hover:-translate-y-1.5 group flex flex-col justify-between">
+            {/* Feature 3 */}
+            <div className="bg-white p-6 border border-slate-200 rounded hover:shadow-md transition-all group flex flex-col justify-between text-left">
               <div>
-                <div className="w-12 h-12 bg-himalayan-mist flex items-center justify-center rounded-md mb-6 group-hover:bg-temple-brass/20 transition-all duration-300">
-                  <BarChart3 className="w-6 h-6 text-temple-brass transition-transform group-hover:scale-110 duration-300" />
+                <div className="w-10 h-10 bg-red-50 text-nepal-red flex items-center justify-center rounded mb-5 group-hover:bg-nepal-red/10 transition-colors">
+                  <AlertTriangle className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-serif font-bold text-pagoda-wood mb-3">Budget & Progress Visualizer</h3>
-                <p className="text-xs text-slate-basalt/80 leading-relaxed">
-                  Cross-references development budget allocation files with project completion percentages. Identifies allocation anomalies and progress delays in municipal public works.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white p-8 border border-dust-beige/55 shadow-sm rounded-md hover:shadow-2xl hover:border-temple-brass/35 transition-all duration-300 hover:-translate-y-1.5 group flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 bg-himalayan-mist flex items-center justify-center rounded-md mb-6 group-hover:bg-temple-brass/20 transition-all duration-300">
-                  <AlertTriangle className="w-6 h-6 text-temple-brass transition-transform group-hover:scale-110 duration-300" />
-                </div>
-                <h3 className="text-lg font-serif font-bold text-pagoda-wood mb-3">Grievance Heatmap</h3>
-                <p className="text-xs text-slate-basalt/80 leading-relaxed">
+                <h3 className="text-base font-bold text-pagoda-wood mb-2">Grievance Heatmap</h3>
+                <p className="text-xs text-slate-basalt/80 leading-relaxed text-left">
                   Allows anonymous reporting of service breakages or infrastructure failure (water, roads, pollution). Pinpoints reports to visual maps to detect high-frequency municipal issue clusters.
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-8 border border-dust-beige/55 shadow-sm rounded-md hover:shadow-2xl hover:border-temple-brass/35 transition-all duration-300 hover:-translate-y-1.5 group flex flex-col justify-between">
+            {/* Feature 4 */}
+            <div className="bg-white p-6 border border-slate-200 rounded hover:shadow-md transition-all group flex flex-col justify-between text-left">
               <div>
-                <div className="w-12 h-12 bg-himalayan-mist flex items-center justify-center rounded-md mb-6 group-hover:bg-temple-brass/20 transition-all duration-300">
-                  <FileText className="w-6 h-6 text-temple-brass transition-transform group-hover:scale-110 duration-300" />
+                <div className="w-10 h-10 bg-slate-100 text-slate-700 flex items-center justify-center rounded mb-5 group-hover:bg-slate-200 transition-colors">
+                  <FileText className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-serif font-bold text-pagoda-wood mb-3">RTI Request Builder</h3>
-                <p className="text-xs text-slate-basalt/80 leading-relaxed">
+                <h3 className="text-base font-bold text-pagoda-wood mb-2">RTI Request Builder</h3>
+                <p className="text-xs text-slate-basalt/80 leading-relaxed text-left">
                   Assists citizens in compiling official Right to Information request PDFs formatted per the Right to Information Act of Nepal, simplifying municipal queries.
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-8 border border-dust-beige/55 shadow-sm rounded-md hover:shadow-2xl hover:border-temple-brass/35 transition-all duration-300 hover:-translate-y-1.5 group flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 bg-himalayan-mist flex items-center justify-center rounded-md mb-6 group-hover:bg-temple-brass/20 transition-all duration-300">
-                  <Users className="w-6 h-6 text-temple-brass transition-transform group-hover:scale-110 duration-300" />
-                </div>
-                <h3 className="text-lg font-serif font-bold text-pagoda-wood mb-3">Representative Directory</h3>
-                <p className="text-xs text-slate-basalt/80 leading-relaxed">
-                  Synthesizes parliament attendance indexes, legislation sponsorship counts, and community rating reports to build performance report cards for elected officials.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Premium Multi-Column Footer */}
-      <footer className="bg-pagoda-wood text-himalayan-mist/75 border-t-2 border-temple-brass/30 pt-16 pb-8 mt-auto w-full font-sans">
+      {/* Access Portal Section */}
+      <section id="auth-section" className="py-16 sm:py-24 bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-            {/* Column 1: Brand & Logo */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <img src="/logo.png" alt="Nirikshan Logo" className="w-10 h-10 object-contain rounded-full bg-white border border-temple-brass p-1 shadow-md" />
-                <div>
-                  <span className="text-lg font-serif font-extrabold tracking-wider text-himalayan-mist">NIRIKSHAN</span>
-                  <span className="text-xs font-sans tracking-widest text-temple-brass block">निरीक्षण</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            {/* Info Panel */}
+            <div className="lg:col-span-7 space-y-6 text-left">
+              <h2 className="text-xs uppercase tracking-widest font-extrabold text-nepal-red">JOIN THE CITIZEN WATCHDOG NETWORK</h2>
+              <p className="text-3xl sm:text-4xl font-serif font-extrabold text-pagoda-wood tracking-tight">
+                Participate in reporting, promise validation, and public moderation.
+              </p>
+              <p className="text-sm text-slate-basalt/80 leading-relaxed">
+                As a registered citizen, you can upload evidence files for promises, report local service delivery failures, and monitor audit feedback from district secretariats.
+              </p>
+              
+              {/* Demo Accounts Panel */}
+              <div className="bg-slate-50 p-6 border border-slate-200 rounded space-y-4 text-left">
+                <div className="text-xs uppercase tracking-widest font-bold text-slate-500">Quick-Fill Audit Roles (For Testing)</div>
+                <div className="flex flex-wrap gap-2.5">
+                  <button onClick={() => handleQuickFill('citizen')} className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold rounded shadow-sm transition-colors flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-blue-600" /> Citizen Auditor
+                  </button>
+                  <button onClick={() => handleQuickFill('moderator')} className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold rounded shadow-sm transition-colors flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-amber-600" /> Secretariat Moderator
+                  </button>
+                  <button onClick={() => handleQuickFill('admin')} className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold rounded shadow-sm transition-colors flex items-center gap-1.5">
+                    <Landmark className="w-3.5 h-3.5 text-nepal-red" /> Chief Administrator
+                  </button>
                 </div>
               </div>
-              <p className="text-xs text-himalayan-mist/60 leading-relaxed">
-                Empowering the public through real-time tracking of constituency developments, budgets, and pledges. Built to promote transparency and accountability in governance across Nepal.
-              </p>
             </div>
 
-            {/* Column 2: Navigation Links */}
-            <div>
-              <h4 className="text-xs uppercase tracking-widest font-bold text-temple-brass mb-4">Core Modules</h4>
-              <ul className="space-y-2 text-xs">
-                <li>
-                  <a href="#promises" className="hover:text-temple-brass hover:translate-x-1 transition-all duration-200 inline-block">Campaign Promises Feed</a>
-                </li>
-                <li>
-                  <a href="#map" className="hover:text-temple-brass hover:translate-x-1 transition-all duration-200 inline-block">GIS Election Boundaries</a>
-                </li>
-                <li>
-                  <a href="#directory" className="hover:text-temple-brass hover:translate-x-1 transition-all duration-200 inline-block">Representative Directory</a>
-                </li>
-                <li>
-                  <a href="#rti" className="hover:text-temple-brass hover:translate-x-1 transition-all duration-200 inline-block">RTI Request Builder</a>
-                </li>
-              </ul>
+            {/* Auth Card */}
+            <div className="lg:col-span-5 w-full">
+              <div className="bg-white border border-slate-200 rounded shadow-md overflow-hidden">
+                <div className="h-1.5 bg-nepal-red"></div>
+                <div className="p-6 sm:p-8">
+                  <div className="mb-6 text-left">
+                    <h3 className="text-xl font-bold text-pagoda-wood">Platform Access Portal</h3>
+                    <p className="text-xs text-slate-400 mt-1">Submit updates or report grievances with secure authentication</p>
+                  </div>
+
+                  {/* Tabs */}
+                  <div className="flex bg-slate-100 p-1 rounded mb-6 border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab('login'); setError(''); }}
+                      className={`flex-1 py-2 text-xs uppercase tracking-wider font-bold transition-all rounded ${activeTab === 'login' ? 'bg-white text-pagoda-wood shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab('signup'); setError(''); }}
+                      className={`flex-1 py-2 text-xs uppercase tracking-wider font-bold transition-all rounded ${activeTab === 'signup' ? 'bg-white text-pagoda-wood shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      Register
+                    </button>
+                  </div>
+
+                  {error && (
+                    <div className="mb-4 bg-red-50 border border-red-200 text-nepal-red px-4 py-2.5 text-xs font-bold rounded">
+                      {error}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSubmit} className="space-y-4 text-left">
+                    {activeTab === 'signup' && (
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Full Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Shri Ashmit Giri"
+                          className="w-full bg-slate-50 border border-slate-200 py-2.5 px-3 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Email Address</label>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="auditor@nirikshan.gov.np"
+                        className="w-full bg-slate-50 border border-slate-200 py-2.5 px-3 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-50 border border-slate-200 py-2.5 px-3 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full py-3 bg-pagoda-wood hover:bg-nepal-red text-white text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
+                    >
+                      {loading ? 'Authenticating...' : activeTab === 'login' ? 'Access Secretariat' : 'Register Account'}
+                    </button>
+                  </form>
+                </div>
+              </div>
             </div>
 
-            {/* Column 3: Integrity & Compliance */}
-            <div>
-              <h4 className="text-xs uppercase tracking-widest font-bold text-temple-brass mb-4">Integrity Framework</h4>
-              <ul className="space-y-2 text-xs">
-                <li>
-                  <span className="text-himalayan-mist/60 block">RTI Act Nepal Compliant</span>
-                </li>
-                <li>
-                  <span className="text-himalayan-mist/60 block">ECN Open-Data Mapped</span>
-                </li>
-                <li>
-                  <span className="text-himalayan-mist/60 block">Decentralized Audit Trails</span>
-                </li>
-                <li>
-                  <span className="text-himalayan-mist/60 block">Moderator Peer-Review Logs</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 4: Contact & Support */}
-            <div className="space-y-3 text-xs">
-              <h4 className="text-xs uppercase tracking-widest font-bold text-temple-brass mb-4">Secretariat Info</h4>
-              <div className="flex items-center gap-2.5 text-himalayan-mist/65 hover:text-temple-brass transition-colors">
-                <MapPin className="w-4 h-4 text-temple-brass flex-shrink-0" />
-                <span>Kathmandu, Nepal</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-himalayan-mist/65 hover:text-temple-brass transition-colors">
-                <Mail className="w-4 h-4 text-temple-brass flex-shrink-0" />
-                <span>contact@nirikshan.gov.np</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-himalayan-mist/65 hover:text-temple-brass transition-colors">
-                <Phone className="w-4 h-4 text-temple-brass flex-shrink-0" />
-                <span>+977 1-4200000</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-himalayan-mist/65 hover:text-temple-brass transition-colors">
-                <Globe className="w-4 h-4 text-temple-brass flex-shrink-0" />
-                <span>nirikshan.gov.np</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-himalayan-mist/40">
-            <p>&copy; 2026 Nirikshan Watchdog Platform. Final-Year Academic Project.</p>
-            <p className="flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-temple-brass" /> Built for Transparency & Civic Accountability in Nepal
-            </p>
           </div>
         </div>
-      </footer>
+      </section>
+
     </div>
   );
 }

@@ -80,29 +80,25 @@ export default function App() {
               </Link>
 
               <nav className="flex items-center gap-6">
-                {user && !user.isAnonymous && (
-                  <>
-                    <Link to="/promises" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                      Promises Feed
-                    </Link>
+                <Link to="/promises" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                  Promises Feed
+                </Link>
 
-                    <Link to="/map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                      Interactive Map
-                    </Link>
+                <Link to="/map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                  Interactive Map
+                </Link>
 
-                    <Link to="/directory" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                      Representatives Directory
-                    </Link>
+                <Link to="/directory" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                  Representatives Directory
+                </Link>
 
-                    <Link to="/rti" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                      RTI Assistant
-                    </Link>
+                <Link to="/rti" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                  RTI Assistant
+                </Link>
 
-                    <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                      Civic Map
-                    </Link>
-                  </>
-                )}
+                <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                  Civic Map
+                </Link>
                 
                 {user && !user.isAnonymous && (user.role === 'moderator' || user.role === 'admin') && (
                   <Link
@@ -128,24 +124,31 @@ export default function App() {
                       <LogOut className="w-4 h-4" />
                     </button>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="flex items-center gap-3 border-l border-dust-beige/30 pl-6">
+                    <a href="/#auth-section" className="text-xs uppercase tracking-wider font-bold text-temple-brass hover:underline">
+                      Auditor Login
+                    </a>
+                  </div>
+                )}
               </nav>
             </div>
           </header>
 
           {/* Page Content */}
           <main className="flex-grow">
+            {/* Client-side routing configuration for Nirikshan */}
             <Routes>
               <Route path="/" element={<LandingPage setUser={setUser} />} />
-              <Route path="/promises" element={user && !user.isAnonymous ? <Dashboard user={user} /> : <Navigate to="/" replace />} />
-              <Route path="/map" element={user && !user.isAnonymous ? <InteractiveMap /> : <Navigate to="/" replace />} />
-              <Route path="/directory" element={user && !user.isAnonymous ? <RepresentativeDirectory /> : <Navigate to="/" replace />} />
-              <Route path="/rti" element={user && !user.isAnonymous ? <RtiAssistant /> : <Navigate to="/" replace />} />
-              <Route path="/civic-map" element={user && !user.isAnonymous ? <CivicMap /> : <Navigate to="/" replace />} />
-              <Route path="/promises/:id" element={user && !user.isAnonymous ? <PromiseDetail user={user} /> : <Navigate to="/" replace />} />
+              <Route path="/promises" element={<Dashboard user={user} />} />
+              <Route path="/map" element={<InteractiveMap />} />
+              <Route path="/directory" element={<RepresentativeDirectory />} />
+              <Route path="/rti" element={<RtiAssistant user={user} />} />
+              <Route path="/civic-map" element={<CivicMap />} />
+              <Route path="/promises/:id" element={<PromiseDetail user={user} />} />
               <Route path="/promises/new" element={user && !user.isAnonymous ? <CreatePromise /> : <Navigate to="/" replace />} />
               <Route path="/moderation" element={user && !user.isAnonymous ? <ModeratorDashboard /> : <Navigate to="/" replace />} />
-              <Route path="/representative/:id" element={user && !user.isAnonymous ? <RepresentativeReportCard /> : <Navigate to="/" replace />} />
+              <Route path="/representative/:id" element={<RepresentativeReportCard />} />
             </Routes>
           </main>
 

@@ -460,8 +460,8 @@ export default function InteractiveMap() {
         
         {/* Map View */}
         <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded text-xs font-bold uppercase tracking-wider text-slate-600">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 border border-slate-200 p-3.5 rounded gap-3 text-xs font-bold uppercase tracking-wider text-slate-600">
+            <div className="flex flex-wrap items-center gap-2.5">
               <span className="text-[10px] text-slate-400">Map Filter:</span>
               <div className="bg-slate-200 p-0.5 rounded flex relative shadow-inner">
                 <button
@@ -493,7 +493,7 @@ export default function InteractiveMap() {
             </div>
           </div>
 
-          <div className="relative h-[480px] w-full border border-slate-200 bg-[#FFFFFF] overflow-hidden rounded">
+          <div className="relative h-[320px] sm:h-[480px] w-full border border-slate-200 bg-[#FFFFFF] overflow-hidden rounded">
             <div ref={mapRef} className="h-full w-full z-10" />
             
             {mapMode === 'constituency' && (

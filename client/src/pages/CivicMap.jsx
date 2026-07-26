@@ -413,7 +413,7 @@ export default function CivicMap() {
         <div className="lg:col-span-8 flex flex-col gap-6">
           
           {/* Map Container */}
-          <div className="relative h-[480px] w-full border border-dust-beige shadow-inner bg-[#F5EFE1] overflow-hidden rounded-sm">
+          <div className="relative h-[320px] sm:h-[480px] w-full border border-dust-beige shadow-inner bg-[#F5EFE1] overflow-hidden rounded-sm">
             <div ref={mapContainerRef} className="h-full w-full z-10" />
             
             {/* Aged Parchment Overlay Effect */}

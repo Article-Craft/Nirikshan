@@ -315,6 +315,23 @@ async function seedAll() {
         policeContact: '061-462923',
         emergencyContact: '100',
         mayorName: 'Dhanraj Acharya'
+      },
+      'SALYAN': {
+        cdoName: 'Mahendra Kumar Sapkota',
+        assistantCdo: null,
+        headquarters: 'Khalanga, Sharada',
+        areaSqKm: '1,462 sq km',
+        population: '238,515',
+        daoAddress: 'District Administration Office, Sharada-2, Salyan, Nepal',
+        daoContact: '088-520133',
+        daoEmail: 'salyandao@gmail.com',
+        daoWebsite: 'https://salyan.dao.gov.np',
+        daoOfficeHours: '10:00 AM - 5:00 PM',
+        municipalitiesCount: 3,
+        ruralMunicipalitiesCount: 7,
+        policeContact: '088-520099',
+        emergencyContact: '100',
+        mayorName: 'Prakash Bhandari'
       }
     };
 

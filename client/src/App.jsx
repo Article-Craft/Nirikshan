@@ -80,6 +80,16 @@ function Header({ user, handleLogout }) {
             )
           )}
         </nav>
+
+        {/* Hamburger menu button for mobile */}
+        <div className="flex md:hidden items-center">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-himalayan-mist hover:text-temple-brass focus:outline-none"
+          >
+            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -30,10 +30,13 @@ const loginSchema = z.object({
  */
 router.post('/register', async (req, res) => {
   try {
+    console.log('[Auth API] Registration attempt for email:', req.body.email);
     const validatedData = registerSchema.parse(req.body);
+    console.log('[Auth API] Validated registration email:', validatedData.email);
     
     // Check if email already exists
     const existingUser = await User.findOne({ where: { email: validatedData.email } });
+    console.log('[Auth API] Existing user found in DB for email:', existingUser ? `Yes (ID: ${existingUser.id})` : 'No');
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
     }
@@ -50,6 +53,7 @@ router.post('/register', async (req, res) => {
       role: validatedData.role || 'citizen',
       isAnonymous: false
     });
+    console.log('[Auth API] User created successfully. ID:', newUser.id);
 
     // Create token
     const token = jwt.sign(
@@ -70,9 +74,10 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
+      console.log('[Auth API] Registration validation failed:', err.errors[0].message);
       return res.status(400).json({ error: err.errors[0].message });
     }
-    console.error('Registration error:', err);
+    console.error('[Auth API] Registration error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -86,14 +91,18 @@ router.post('/register', async (req, res) => {
  */
 router.post('/login', async (req, res) => {
   try {
+    console.log('[Auth API] Login attempt for email:', req.body.email);
     const validatedData = loginSchema.parse(req.body);
+    console.log('[Auth API] Validated login email:', validatedData.email);
 
     const user = await User.findOne({ where: { email: validatedData.email } });
+    console.log('[Auth API] User found in DB for login:', user ? `Yes (ID: ${user.id})` : 'No');
     if (!user || user.isAnonymous) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const isMatch = await bcrypt.compare(validatedData.password, user.passwordHash);
+    console.log('[Auth API] Password match result:', isMatch);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -116,9 +125,10 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
+      console.log('[Auth API] Login validation failed:', err.errors[0].message);
       return res.status(400).json({ error: err.errors[0].message });
     }
-    console.error('Login error:', err);
+    console.error('[Auth API] Login error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

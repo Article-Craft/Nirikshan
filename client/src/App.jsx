@@ -21,7 +21,46 @@ function Header({ user, handleLogout }) {
   const isLoggedIn = user && !user.isAnonymous;
   const closeMenu = () => setIsOpen(false);
 
-  return null;
+  return (
+    <header className="bg-pagoda-wood text-himalayan-mist border-b border-dust-beige shadow-sm relative z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
+        <Link to="/" onClick={closeMenu} className="flex items-center gap-3 group">
+          <img src="/logo.png" alt="Nirikshan Logo" className="w-10 h-10 object-contain rounded-full p-1 bg-white border border-dust-beige shadow-sm" />
+          <span className="text-xl sm:text-2xl font-serif tracking-wider font-extrabold text-himalayan-mist group-hover:text-temple-brass transition-colors">
+            NIRIKSHAN <span className="font-sans font-light text-xs sm:text-sm tracking-widest text-temple-brass block md:inline md:ml-2">निरीक्षण</span>
+          </span>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-6">
+          {isLoggedIn && (
+            <>
+              <Link to="/promises" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Promises Feed
+              </Link>
+              <Link to="/map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Interactive Map
+              </Link>
+              <Link to="/directory" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Representatives Directory
+              </Link>
+              <Link to="/rti" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                RTI Assistant
+              </Link>
+              <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Civic Map
+              </Link>
+              {(user.role === 'moderator' || user.role === 'admin') && (
+                <Link to="/moderation" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors text-temple-brass">
+                  Moderation
+                </Link>
+              )}
+            </>
+          )}
+        </nav>
+      </div>
+    </header>
+  );
 }
 
 export default function App() {

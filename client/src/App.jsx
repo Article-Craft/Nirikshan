@@ -11,7 +11,18 @@ import RtiAssistant from './pages/RtiAssistant';
 import CivicMap from './pages/CivicMap';
 import LandingPage from './pages/LandingPage';
 import { authAPI } from './api';
-import { ShieldCheck, UserCheck, LogOut, Loader, Award, Shield, Mail, Phone, MapPin, Globe } from 'lucide-react';
+import { ShieldCheck, UserCheck, LogOut, Loader, Award, Shield, Mail, Phone, MapPin, Globe, Menu, X } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+
+function Header({ user, handleLogout }) {
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+  const showLoginLink = location.pathname !== '/';
+  const isLoggedIn = user && !user.isAnonymous;
+  const closeMenu = () => setIsOpen(false);
+
+  return null;
+}
 
 export default function App() {
   const [user, setUser] = useState(null);

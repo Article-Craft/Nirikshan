@@ -56,6 +56,28 @@ function Header({ user, handleLogout }) {
                 </Link>
               )}
             </>
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3 border-l border-dust-beige/30 pl-6">
+              <span className="text-xs text-slate-basalt bg-weather-stone px-2.5 py-1 font-semibold flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-temple-brass" />
+                {user.name} ({user.role})
+              </span>
+              <button
+                onClick={() => { handleLogout(); closeMenu(); }}
+                title="Log Out"
+                className="text-himalayan-mist/70 hover:text-status-broken transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            showLoginLink && (
+              <div className="flex items-center gap-3 border-l border-dust-beige/30 pl-6">
+                <a href="/#auth-section" className="text-xs uppercase tracking-wider font-bold text-temple-brass hover:underline">
+                  Auditor Login
+                </a>
+              </div>
+            )
           )}
         </nav>
       </div>

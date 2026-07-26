@@ -91,6 +91,54 @@ function Header({ user, handleLogout }) {
           </button>
         </div>
       </div>
+
+      {/* Mobile Navigation Dropdown */}
+      {isOpen && (
+        <div className="md:hidden bg-slate-900 border-b border-dust-beige/20 px-4 py-6 space-y-4 animate-fade-in absolute top-20 left-0 w-full shadow-lg">
+          {isLoggedIn ? (
+            <div className="flex flex-col space-y-3">
+              <div className="pb-3 border-b border-white/10 mb-2 flex items-center justify-between">
+                <span className="text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-temple-brass" />
+                  {user.name} ({user.role})
+                </span>
+                <button
+                  onClick={() => { handleLogout(); closeMenu(); }}
+                  className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Logout
+                </button>
+              </div>
+              <Link to="/promises" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                Promises Feed
+              </Link>
+              <Link to="/map" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                Interactive Map
+              </Link>
+              <Link to="/directory" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                Representatives Directory
+              </Link>
+              <Link to="/rti" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                RTI Assistant
+              </Link>
+              <Link to="/civic-map" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                Civic Map
+              </Link>
+              {(user.role === 'moderator' || user.role === 'admin') && (
+                <Link to="/moderation" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors text-temple-brass">
+                  Moderation
+                </Link>
+              )}
+            </div>
+          ) : (
+            showLoginLink && (
+              <a href="/#auth-section" onClick={closeMenu} className="text-sm uppercase tracking-wider font-bold text-temple-brass block hover:underline">
+                Auditor Login
+              </a>
+            )
+          )}
+        </div>
+      )}
     </header>
   );
 }

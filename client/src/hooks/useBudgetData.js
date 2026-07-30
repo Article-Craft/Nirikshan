@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { budgetAPI } from '../api';
 
 export const useBudgetData = (regionId = 'all') => {
   const [data, setData] = useState([]);
@@ -6,27 +7,45 @@ export const useBudgetData = (regionId = 'all') => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     setLoading(true);
-    // Simulate API call
-    const fetchBudget = setTimeout(() => {
-      try {
-        const mockData = [
-          { name: 'Q1', allocated: 45000000, completed: 32000000, hasMismatch: false },
-          { name: 'Q2', allocated: 52000000, completed: 48000000, hasMismatch: false },
-          { name: 'Q3', allocated: 61000000, completed: 35000000, hasMismatch: true },
-          { name: 'Q4', allocated: 48000000, completed: 15000000, hasMismatch: true },
-        ];
-        
-        setData(mockData);
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch budget data');
-      } finally {
-        setLoading(false);
-      }
-    }, 1500); // 1.5s delay to show the Weathered Stone shimmer
+    setError(null);
 
-    return () => clearTimeout(fetchBudget);
+    const params = {};
+    if (regionId && regionId !== 'all') {
+      params.district_id = regionId;
+    }
+
+    budgetAPI.getAll(params)
+      .then((projects) => {
+        if (!isMounted) return;
+        const mappedData = projects.map(proj => {
+          const allocated = Number(proj.allocatedAmount) || 0;
+          const completionPercent = Number(proj.completionPercent) || 0;
+          const completed = allocated * (completionPercent / 100);
+          return {
+            name: proj.title,
+            allocated,
+            completed,
+            hasMismatch: proj.evidenceStatus !== 'verified'
+          };
+        });
+        setData(mappedData);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.error('useBudgetData error:', err);
+        setError(err.response?.data?.error || 'Failed to fetch budget data');
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [regionId]);
 
   return { data, loading, error };

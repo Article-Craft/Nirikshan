@@ -32,8 +32,6 @@ export default function InteractiveMap() {
   const [selectedConstituencyId, setSelectedConstituencyId] = useState(null);
   const [hoveredFeatureName, setHoveredFeatureName] = useState(null);
   const [geoJsonData, setGeoJsonData] = useState(null);
-  const [districtsList, setDistrictsList] = useState([]);
-  const [constituenciesList, setConstituenciesList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Real data state

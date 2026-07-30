@@ -52,6 +52,15 @@ export const representativesAPI = {
   getById: (id) => api.get(`/representatives/${id}`).then(res => res.data),
   submitRating: (id, data) => api.post(`/representatives/${id}/rating`, data).then(res => res.data),
 };
+
+export const budgetAPI = {
+  getAll: (params) => api.get('/budget-projects', { params }).then(res => res.data),
+  create: (data) => api.post('/budget-projects', data).then(res => res.data),
+};
+
+export const complaintsAPI = {
+  getAll: (params) => api.get('/complaints', { params }).then(res => res.data),
+  create: (data) => api.post('/complaints', data).then(res => res.data),
 };
 
 export default api;

@@ -23,13 +23,13 @@ const explicitDistrictData = {
       { id: 'KTM-1', name: 'Kathmandu 1', winner: 'Prakash Man Singh', party: 'NC', votes: 7143, margin: '125 votes', promisesCount: 12, progress: 65 },
       { id: 'KTM-2', name: 'Kathmandu 2', winner: 'Sobita Gautam', party: 'RSP', votes: 15229, margin: '3,122 votes', promisesCount: 8, progress: 40 },
       { id: 'KTM-3', name: 'Kathmandu 3', winner: 'Santosh Chalise', party: 'NC', votes: 15158, margin: '1,420 votes', promisesCount: 10, progress: 50 },
-      { id: 'KTM-4', name: 'Gagan Kumar Thapa', party: 'NC', votes: 21302, margin: '7,446 votes', promisesCount: 18, progress: 75 },
-      { id: 'KTM-5', name: 'Pradip Paudel', party: 'NC', votes: 15237, margin: '5,022 votes', promisesCount: 14, progress: 60 },
-      { id: 'KTM-6', name: 'Shishir Khanal', party: 'RSP', votes: 14204, margin: '4,102 votes', promisesCount: 9, progress: 45 },
-      { id: 'KTM-7', name: 'Ganesh Parajuli', party: 'RSP', votes: 8743, margin: '1,502 votes', promisesCount: 7, progress: 30 },
-      { id: 'KTM-8', name: 'Biraj Bhakta Shrestha', party: 'RSP', votes: 10105, margin: '4,120 votes', promisesCount: 11, progress: 55 },
-      { id: 'KTM-9', name: 'Krishna Gopal Shrestha', party: 'UML', votes: 11956, margin: '992 votes', promisesCount: 6, progress: 80 },
-      { id: 'KTM-10', name: 'Rajendra Kumar KC', party: 'NC', votes: 14458, margin: '2,310 votes', promisesCount: 15, progress: 70 }
+      { id: 'KTM-4', name: 'Kathmandu 4', winner: 'Gagan Kumar Thapa', party: 'NC', votes: 21302, margin: '7,446 votes', promisesCount: 18, progress: 75 },
+      { id: 'KTM-5', name: 'Kathmandu 5', winner: 'Pradip Paudel', party: 'NC', votes: 15237, margin: '5,022 votes', promisesCount: 14, progress: 60 },
+      { id: 'KTM-6', name: 'Kathmandu 6', winner: 'Shishir Khanal', party: 'RSP', votes: 14204, margin: '4,102 votes', promisesCount: 9, progress: 45 },
+      { id: 'KTM-7', name: 'Kathmandu 7', winner: 'Ganesh Parajuli', party: 'RSP', votes: 8743, margin: '1,502 votes', promisesCount: 7, progress: 30 },
+      { id: 'KTM-8', name: 'Kathmandu 8', winner: 'Biraj Bhakta Shrestha', party: 'RSP', votes: 10105, margin: '4,120 votes', promisesCount: 11, progress: 55 },
+      { id: 'KTM-9', name: 'Kathmandu 9', winner: 'Krishna Gopal Shrestha', party: 'UML', votes: 11956, margin: '992 votes', promisesCount: 6, progress: 80 },
+      { id: 'KTM-10', name: 'Kathmandu 10', winner: 'Rajendra Kumar KC', party: 'NC', votes: 14458, margin: '2,310 votes', promisesCount: 15, progress: 70 }
     ]
   },
   'LALITPUR': {
@@ -43,7 +43,7 @@ const explicitDistrictData = {
     constituencies: [
       { id: 'LPT-1', name: 'Lalitpur 1', winner: 'Udaya Shumsher Rana', party: 'NC', votes: 23871, margin: '1,314 votes', promisesCount: 9, progress: 45 },
       { id: 'LPT-2', name: 'Lalitpur 2', winner: 'Prem Bahadur Maharjan', party: 'UML', votes: 15025, margin: '2,502 votes', promisesCount: 7, progress: 50 },
-      { id: 'LPT-3', name: 'Dr. Toshima Karki', party: 'RSP', votes: 31136, margin: '18,173 votes', promisesCount: 16, progress: 60 }
+      { id: 'LPT-3', name: 'Lalitpur 3', winner: 'Dr. Toshima Karki', party: 'RSP', votes: 31136, margin: '18,173 votes', promisesCount: 16, progress: 60 }
     ]
   },
   'JHAPA': {
@@ -57,9 +57,9 @@ const explicitDistrictData = {
     constituencies: [
       { id: 'JHP-1', name: 'Jhapa 1', winner: 'Vishwa Prakash Sharma', party: 'NC', votes: 39624, margin: '14,275 votes', promisesCount: 15, progress: 70 },
       { id: 'JHP-2', name: 'Jhapa 2', winner: 'Devraj Ghimire', party: 'UML', votes: 26315, margin: '2,102 votes', promisesCount: 5, progress: 85 },
-      { id: 'JHP-3', name: 'Rajendra Lingden', party: 'RPP', votes: 40648, margin: '3,276 votes', promisesCount: 12, progress: 55 },
-      { id: 'JHP-4', name: 'Lal Prasad Sawa Limbu', party: 'UML', votes: 29315, margin: '1,506 votes', promisesCount: 8, progress: 60 },
-      { id: 'JHP-5', name: 'Kharga Prasad (K.P.) Oli', party: 'UML', votes: 39612, margin: '28,576 votes', promisesCount: 22, progress: 80 }
+      { id: 'JHP-3', name: 'Jhapa 3', winner: 'Rajendra Lingden', party: 'RPP', votes: 40648, margin: '3,276 votes', promisesCount: 12, progress: 55 },
+      { id: 'JHP-4', name: 'Jhapa 4', winner: 'Lal Prasad Sawa Limbu', party: 'UML', votes: 29315, margin: '1,506 votes', promisesCount: 8, progress: 60 },
+      { id: 'JHP-5', name: 'Jhapa 5', winner: 'Kharga Prasad (K.P.) Oli', party: 'UML', votes: 39612, margin: '28,576 votes', promisesCount: 22, progress: 80 }
     ]
   },
   'CHITWAN': {
@@ -72,8 +72,8 @@ const explicitDistrictData = {
     },
     constituencies: [
       { id: 'CTW-1', name: 'Chitwan 1', winner: 'Hari Dhakal', party: 'RSP', votes: 34189, margin: '7,512 votes', promisesCount: 11, progress: 50 },
-      { id: 'CTW-2', name: 'Rabi Lamichhane', party: 'RSP', votes: 54176, margin: '42,962 votes', promisesCount: 20, progress: 65 },
-      { id: 'CTW-3', name: 'Dr. Bikram Pandey', party: 'RPP', votes: 22366, margin: '9,215 votes', promisesCount: 10, progress: 40 }
+      { id: 'CTW-2', name: 'Chitwan 2', winner: 'Rabi Lamichhane', party: 'RSP', votes: 54176, margin: '42,962 votes', promisesCount: 20, progress: 65 },
+      { id: 'CTW-3', name: 'Chitwan 3', winner: 'Dr. Bikram Pandey', party: 'RPP', votes: 22366, margin: '9,215 votes', promisesCount: 10, progress: 40 }
     ]
   },
   'KASKI': {
@@ -86,8 +86,8 @@ const explicitDistrictData = {
     },
     constituencies: [
       { id: 'KSK-1', name: 'Kaski 1', winner: 'Man Bahadur Gurung', party: 'UML', votes: 25712, margin: '2,510 votes', promisesCount: 8, progress: 50 },
-      { id: 'KSK-2', name: 'Bidya Bhattarai', party: 'UML', votes: 16998, margin: '4,503 votes', promisesCount: 7, progress: 60 },
-      { id: 'KSK-3', name: 'Damodar Bairagi', party: 'UML', votes: 22915, margin: '5,402 votes', promisesCount: 9, progress: 55 }
+      { id: 'KSK-2', name: 'Kaski 2', winner: 'Bidya Bhattarai', party: 'UML', votes: 16998, margin: '4,503 votes', promisesCount: 7, progress: 60 },
+      { id: 'KSK-3', name: 'Kaski 3', winner: 'Damodar Bairagi', party: 'UML', votes: 22915, margin: '5,402 votes', promisesCount: 9, progress: 55 }
     ]
   },
   'GORKHA': {
@@ -100,7 +100,7 @@ const explicitDistrictData = {
     },
     constituencies: [
       { id: 'GRK-1', name: 'Gorkha 1', winner: 'Rajendra Bajgain', party: 'NC', votes: 22137, margin: '3,102 votes', promisesCount: 11, progress: 45 },
-      { id: 'GRK-2', name: 'Pushpa Kamal Dahal (Prachanda)', party: 'MC', votes: 26109, margin: '13,467 votes', promisesCount: 25, progress: 65 }
+      { id: 'GRK-2', name: 'Gorkha 2', winner: 'Pushpa Kamal Dahal (Prachanda)', party: 'MC', votes: 26109, margin: '13,467 votes', promisesCount: 25, progress: 65 }
     ]
   }
 };

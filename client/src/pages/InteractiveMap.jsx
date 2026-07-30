@@ -62,6 +62,16 @@ export default function InteractiveMap() {
     };
   }, [loading]);
 
+const PROVINCE_COLORS = {
+  1: '#8A9A86', // Koshi - Soft sage green
+  2: '#A88074', // Madhesh - Warm terracotta clay
+  3: '#7CA3A1', // Bagmati - Muted slate teal
+  4: '#C5A376', // Gandaki - Golden wheat ochre
+  5: '#6E8A9A', // Lumbini - Soft steel blue
+  6: '#967E91', // Karnali - Muted amethyst plum
+  7: '#B29B72'  // Sudurpashchim - Light brass/olive
+};
+
   // Handle GeoJSON styling and interaction
   useEffect(() => {
     const map = leafletMapInstance.current;
@@ -77,8 +87,9 @@ export default function InteractiveMap() {
       const distName = feature.properties.DISTRICT;
       const distData = getDistrictData(distName);
       const isSelected = selectedDistrict.toUpperCase() === distName.toUpperCase();
+      const province = feature.properties.PROVINCE;
       
-      let fillColor = '#E4DCC8'; // Weathered Stone (Default District Mode)
+      let fillColor = PROVINCE_COLORS[province] || '#E4DCC8';
       
       if (mapMode === 'constituency' && distData && distData.constituencies.length > 0) {
         // Color by the winning party of the first/primary constituency for visual representation
@@ -88,10 +99,10 @@ export default function InteractiveMap() {
 
       return {
         fillColor: fillColor,
-        weight: isSelected ? 2.5 : 1,
+        weight: isSelected ? 3 : 1,
         opacity: 1,
-        color: isSelected ? '#9C7A3C' : '#CFC4A8', // Temple Brass outline on selected, Dust Beige otherwise
-        fillOpacity: mapMode === 'constituency' ? (isSelected ? 0.95 : 0.75) : (isSelected ? 0.9 : 0.6),
+        color: isSelected ? '#2E2418' : '#F3EFE4', // Deep Pagoda Wood outline on selected, Himalayan Mist otherwise
+        fillOpacity: mapMode === 'constituency' ? (isSelected ? 0.95 : 0.75) : (isSelected ? 0.9 : 0.7),
         dashArray: isSelected ? '' : '3',
       };
     };
@@ -99,18 +110,42 @@ export default function InteractiveMap() {
     // Feature interactions
     const onEachFeature = (feature, layer) => {
       const distName = feature.properties.DISTRICT;
+      const province = feature.properties.PROVINCE;
+      const distData = getDistrictData(distName);
+      const formattedName = distName.charAt(0) + distName.slice(1).toLowerCase();
+
+      // Bind rich premium tooltip
+      let tooltipContent = `
+        <div class="p-1 font-sans">
+          <div class="font-bold text-xs border-b border-dust-beige/30 pb-0.5 mb-1 text-himalayan-mist">${formattedName}</div>
+          <div class="text-[10px] text-himalayan-mist/80">Province ${province}</div>
+      `;
+      if (mapMode === 'constituency' && distData && distData.constituencies.length > 0) {
+        const primary = distData.constituencies[0];
+        const partyInfo = PARTIES[primary.party];
+        tooltipContent += `
+          <div class="mt-1 text-[10px] font-semibold text-temple-brass">
+            Primary: ${primary.winner} (${partyInfo?.short})
+          </div>
+        `;
+      }
+      tooltipContent += `</div>`;
+
+      layer.bindTooltip(tooltipContent, {
+        sticky: true,
+        direction: 'auto',
+        className: 'leaflet-custom-tooltip'
+      });
       
       layer.on({
         mouseover: (e) => {
           const l = e.target;
           l.setStyle({
-            weight: 2.5,
+            weight: 3,
             color: '#9C7A3C', // Temple Brass hover outline
             fillOpacity: mapMode === 'constituency' ? 0.95 : 0.85,
           });
           l.bringToFront();
-          // Format text: capitalize first letter
-          const formattedName = distName.charAt(0) + distName.slice(1).toLowerCase();
           setHoveredFeatureName(formattedName);
         },
         mouseout: (e) => {
@@ -118,7 +153,6 @@ export default function InteractiveMap() {
           setHoveredFeatureName(null);
         },
         click: () => {
-          const formattedName = distName.charAt(0) + distName.slice(1).toLowerCase();
           setSelectedDistrict(formattedName);
           
           // Fit map view slightly to clicked polygon bounds

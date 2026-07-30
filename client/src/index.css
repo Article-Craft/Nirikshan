@@ -44,3 +44,21 @@
     }
   }
 }
+
+.leaflet-tooltip.leaflet-custom-tooltip {
+  background-color: rgba(46, 36, 24, 0.95) !important; /* pagoda-wood */
+  color: #F3EFE4 !important; /* himalayan-mist */
+  border: 1px solid #9C7A3C !important; /* temple-brass */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 4px !important;
+  font-family: ui-sans-serif, system-ui, sans-serif !important;
+}
+
+.leaflet-tooltip-left.leaflet-custom-tooltip::before {
+  border-left-color: rgba(46, 36, 24, 0.95) !important;
+}
+
+.leaflet-tooltip-right.leaflet-custom-tooltip::before {
+  border-right-color: rgba(46, 36, 24, 0.95) !important;
+}
+

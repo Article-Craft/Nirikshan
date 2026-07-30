@@ -104,6 +104,15 @@ AWS_ACCESS_KEY_ID=your_aws_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret
 ```
 
+### 3.5. Seed the Database (Optional)
+
+To populate the local SQLite or PostgreSQL database with default provinces, districts, constituencies, representative winners (2026 ECN data), and demo promises:
+
+```bash
+# From the root directory
+npm run seed
+```
+
 ### 4. Run Development Servers
 
 Start the backend:

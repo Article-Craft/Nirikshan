@@ -51,6 +51,15 @@ export default function LandingPage({ setUser }) {
       <div className="relative overflow-hidden bg-gradient-to-b from-pagoda-wood to-slate-basalt text-himalayan-mist py-24 sm:py-32 border-b border-temple-brass/30">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#9C7A3C_1.5px,transparent_1.5px)] [background-size:24px_24px]"></div>
         
+        {/* Subtle Nepal Map Background */}
+        <div className="absolute inset-y-0 right-0 w-full lg:w-3/5 opacity-[0.12] pointer-events-none select-none flex items-center justify-center lg:justify-end pr-0 lg:pr-8 z-0">
+          <img 
+            src="/nepal-map.svg" 
+            alt="Nepal Map Outline" 
+            className="h-full max-h-[90%] w-auto object-contain"
+          />
+        </div>
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             

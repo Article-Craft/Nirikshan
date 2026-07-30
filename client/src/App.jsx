@@ -11,7 +11,7 @@ import RtiAssistant from './pages/RtiAssistant';
 import CivicMap from './pages/CivicMap';
 import LandingPage from './pages/LandingPage';
 import { authAPI } from './api';
-import { ShieldCheck, UserCheck, LogOut, Loader, Award } from 'lucide-react';
+import { ShieldCheck, UserCheck, LogOut, Loader, Award, Shield, Mail, Phone, MapPin, Globe } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -149,14 +149,90 @@ export default function App() {
             </Routes>
           </main>
 
-          {/* Premium Institutional Footer */}
-          <footer className="bg-pagoda-wood text-himalayan-mist/60 border-t border-dust-beige/20 py-8 mt-20 text-xs">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-              <p>&copy; 2026 Nirikshan Watchdog Platform. Final-Year Academic Project.</p>
-              <p className="flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-temple-brass" />
-                Built for Transparency & Civic Accountability in Nepal
-              </p>
+          {/* Premium Multi-Column Footer */}
+          <footer className="bg-pagoda-wood text-himalayan-mist/75 border-t-2 border-temple-brass/30 pt-16 pb-8 mt-20 w-full text-xs">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+                {/* Column 1: Brand & Logo */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <img src="/logo.png" alt="Nirikshan Logo" className="w-10 h-10 object-contain rounded-full bg-white border border-temple-brass p-1 shadow-md" />
+                    <div>
+                      <span className="text-lg font-serif font-extrabold tracking-wider text-himalayan-mist">NIRIKSHAN</span>
+                      <span className="text-xs font-sans tracking-widest text-temple-brass block text-left">निरीक्षण</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-himalayan-mist/60 leading-relaxed text-left">
+                    Empowering the public through real-time tracking of constituency developments, budgets, and pledges. Built to promote transparency and accountability in governance across Nepal.
+                  </p>
+                </div>
+
+                {/* Column 2: Navigation Links */}
+                <div className="text-left">
+                  <h4 className="text-xs uppercase tracking-widest font-bold text-temple-brass mb-4">Core Modules</h4>
+                  <ul className="space-y-2 text-xs">
+                    <li>
+                      <Link to="/promises" className="hover:text-temple-brass hover:translate-x-1 transition-all duration-200 inline-block">Campaign Promises Feed</Link>
+                    </li>
+                    <li>
+                      <Link to="/map" className="hover:text-temple-brass hover:translate-x-1 transition-all duration-200 inline-block">GIS Election Boundaries</Link>
+                    </li>
+                    <li>
+                      <Link to="/directory" className="hover:text-temple-brass hover:translate-x-1 transition-all duration-200 inline-block">Representative Directory</Link>
+                    </li>
+                    <li>
+                      <Link to="/rti" className="hover:text-temple-brass hover:translate-x-1 transition-all duration-200 inline-block">RTI Request Builder</Link>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Column 3: Integrity & Compliance */}
+                <div className="text-left">
+                  <h4 className="text-xs uppercase tracking-widest font-bold text-temple-brass mb-4">Integrity Framework</h4>
+                  <ul className="space-y-2 text-xs">
+                    <li>
+                      <span className="text-himalayan-mist/60 block">RTI Act Nepal Compliant</span>
+                    </li>
+                    <li>
+                      <span className="text-himalayan-mist/60 block">ECN Open-Data Mapped</span>
+                    </li>
+                    <li>
+                      <span className="text-himalayan-mist/60 block">Decentralized Audit Trails</span>
+                    </li>
+                    <li>
+                      <span className="text-himalayan-mist/60 block">Moderator Peer-Review Logs</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Column 4: Contact & Support */}
+                <div className="space-y-3 text-xs text-left">
+                  <h4 className="text-xs uppercase tracking-widest font-bold text-temple-brass mb-4">Secretariat Info</h4>
+                  <div className="flex items-center gap-2.5 text-himalayan-mist/65 hover:text-temple-brass transition-colors">
+                    <MapPin className="w-4 h-4 text-temple-brass flex-shrink-0" />
+                    <span>Kathmandu, Nepal</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-himalayan-mist/65 hover:text-temple-brass transition-colors">
+                    <Mail className="w-4 h-4 text-temple-brass flex-shrink-0" />
+                    <span>contact@nirikshan.gov.np</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-himalayan-mist/65 hover:text-temple-brass transition-colors">
+                    <Phone className="w-4 h-4 text-temple-brass flex-shrink-0" />
+                    <span>+977 1-4200000</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-himalayan-mist/65 hover:text-temple-brass transition-colors">
+                    <Globe className="w-4 h-4 text-temple-brass flex-shrink-0" />
+                    <span>nirikshan.gov.np</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-himalayan-mist/40">
+                <p>&copy; 2026 Nirikshan Watchdog Platform. Final-Year Academic Project.</p>
+                <p className="flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-temple-brass" /> Built for Transparency & Civic Accountability in Nepal
+                </p>
+              </div>
             </div>
           </footer>
         </div>

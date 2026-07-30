@@ -8,7 +8,7 @@ if (!databaseUrl || databaseUrl.startsWith('sqlite:')) {
   console.log('Initializing with SQLite database.');
   sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: './nirikshan.sqlite',
+    storage: require('path').join(__dirname, '..', 'nirikshan.sqlite'),
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     define: {
       timestamps: false,

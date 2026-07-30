@@ -50,3 +50,48 @@ Always branch off `main` using the following patterns:
 1. Ensure your code builds locally without errors.
 2. Submit a descriptive Pull Request (PR) detailing what changes were introduced.
 3. Link the PR to the relevant task ticket or tracking issue.
+
+---
+
+## 4. API Endpoints Contract (New Backend Services)
+
+For development integration with the Nepal watchdog features, use the following payload structures:
+
+### Representatives Directory (`/api/representatives`)
+* **GET `/api/representatives`**:
+  * Optional Query Params: `constituency_id` (e.g. `KTM-4`), `search` (name substring).
+  * Returns: `Array` of Representative objects.
+* **POST `/api/representatives` (Auth: Moderator/Admin)**:
+  * Content-Type: `multipart/form-data` or `application/json`
+  * Body: `name` (string), `party` (string), `constituencyId` (string), `position` (string, optional), `attendancePercent` (number, optional), `billsSponsored` (number, optional), `contactInfo` (string, optional), and optional file `photo` (or `photo_url` string).
+* **POST `/api/representatives/:id/rating` (Auth Required)**:
+  * Body: `stars` (number, 1-5), `comment` (string, optional).
+
+### Districts & Constituencies (`/api/districts`, `/api/constituencies`)
+* **GET `/api/districts`**: Returns list of all 77 districts.
+* **GET `/api/districts/:id`**: Returns district with nested `constituencies`.
+* **GET `/api/constituencies`**: Optional query `district_id`.
+* **GET `/api/constituencies/:id`**: Returns constituency details including `winnerRepresentative` and `district`.
+
+### Civic Complaints (`/api/complaints`)
+* **POST `/api/complaints` (Anonymous allowed, no token)**:
+  * Content-Type: `multipart/form-data` or `application/json`
+  * Body: `serviceType` (string), `description` (string), `locationLat` (number, optional), `locationLng` (number, optional), `ward` (string, optional), `isAnonymous` (boolean, optional), and optional file `photo` (or `photo_url` string).
+  * Enters moderation queue by default (`status: 'pending'`).
+
+### Budget Projects (`/api/budget-projects`)
+* **GET `/api/budget-projects`**: Optional query `district_id`.
+* **POST `/api/budget-projects` (Auth: Moderator/Admin)**:
+  * Body: `title` (string), `districtId` (number), `allocatedAmount` (number), `completionPercent` (number, optional), `description` (string, optional).
+
+### RTI Assistant (`/api/rti-requests`)
+* **GET `/api/rti-requests/mine` (Auth Required)**: User's submitted RTI applications.
+* **POST `/api/rti-requests` (Auth Required)**:
+  * Body: `subject` (string), `targetOffice` (string), `letterContent` (string), `deadlineDate` (string `YYYY-MM-DD`, optional).
+
+### Civic Activity Map (`/api/civic-events`)
+* **GET `/api/civic-events`**: Returns verified civic events.
+* **POST `/api/civic-events` (Auth Required)**:
+  * Body: `name` (string), `eventType` (string), `date` (ISO/Datetime string), `locationLat` (number, optional), `locationLng` (number, optional), `organizer` (string), `description` (string, optional).
+  * Submitted events are unverified by default (`verified: false`) and sent to moderation.
+

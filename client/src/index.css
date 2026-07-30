@@ -14,8 +14,9 @@
   --color-status-delayed: #8C6A32;
   --color-status-broken: #6E4438;
   
-  --color-turmeric-clay: #8C6A32;
-  --color-charred-brick: #6E4438;
+  --color-rhododendron-green: #3E5E3D;
+  --color-turmeric-clay: #C48E38;
+  --color-charred-brick: #8B4032;
 }
 
 @layer base {

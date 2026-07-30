@@ -6,6 +6,8 @@ import ModeratorDashboard from './pages/ModeratorDashboard';
 import CreatePromise from './pages/CreatePromise';
 import InteractiveMap from './pages/InteractiveMap';
 import RepresentativeReportCard from './pages/RepresentativeReportCard';
+import RtiAssistant from './pages/RtiAssistant';
+import CivicMap from './pages/CivicMap';
 import { authAPI } from './api';
 import { ShieldCheck, UserCheck, LogOut, Loader, Award } from 'lucide-react';
 
@@ -102,6 +104,14 @@ export default function App() {
               <Link to="/map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
                 Interactive Map
               </Link>
+
+              <Link to="/rti" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                RTI Assistant
+              </Link>
+
+              <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Civic Map
+              </Link>
               
               {user && (user.role === 'moderator' || user.role === 'admin') && (
                 <Link
@@ -164,6 +174,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/map" element={<InteractiveMap />} />
+            <Route path="/rti" element={<RtiAssistant />} />
+            <Route path="/civic-map" element={<CivicMap />} />
             <Route path="/promises/:id" element={<PromiseDetail user={user} />} />
             <Route path="/promises/new" element={<CreatePromise />} />
             <Route path="/moderation" element={<ModeratorDashboard />} />

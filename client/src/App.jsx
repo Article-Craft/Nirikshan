@@ -5,7 +5,9 @@ import PromiseDetail from './pages/PromiseDetail';
 import ModeratorDashboard from './pages/ModeratorDashboard';
 import CreatePromise from './pages/CreatePromise';
 import InteractiveMap from './pages/InteractiveMap';
-import RepresentativeReportCard from './pages/RepresentativeReportCard';
+import RepresentativeDirectory from './pages/RepresentativeDirectory';
+
+
 import RtiAssistant from './pages/RtiAssistant';
 import CivicMap from './pages/CivicMap';
 import { authAPI } from './api';
@@ -112,6 +114,7 @@ export default function App() {
               <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
                 Civic Map
               </Link>
+                <Link to="/directory" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">Representatives Directory</Link>
               
               {user && (user.role === 'moderator' || user.role === 'admin') && (
                 <Link
@@ -179,6 +182,7 @@ export default function App() {
             <Route path="/promises/:id" element={<PromiseDetail user={user} />} />
             <Route path="/promises/new" element={<CreatePromise />} />
             <Route path="/moderation" element={<ModeratorDashboard />} />
+            <Route path="/directory" element={<RepresentativeDirectory />} />
             <Route path="/representative/:id" element={<RepresentativeReportCard />} />
           </Routes>
         </main>

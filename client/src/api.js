@@ -37,4 +37,14 @@ export const moderationAPI = {
   reject: (id) => api.post(`/moderation/${id}/reject`).then(res => res.data),
 };
 
+export const representativesAPI = {
+  getAll: (params) => api.get('/representatives', { params }).then(res => res.data),
+  getById: (id) => api.get(`/representatives/${id}`).then(res => res.data),
+  submitRating: (id, data) => api.post(`/representatives/${id}/rating`, data).then(res => res.data),
+};
+
+export const constituenciesAPI = {
+  getAll: (params) => api.get('/constituencies', { params }).then(res => res.data),
+};
+
 export default api;

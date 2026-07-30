@@ -183,11 +183,11 @@ export default function Dashboard({ user }) {
             />
           </div>
 
-          <div className="flex items-end gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 md:col-span-1 mt-2 md:mt-0">
             <button
               type="button"
               onClick={clearFilters}
-              className="flex-1 bg-weather-stone border border-dust-beige text-slate-basalt text-sm py-2 px-4 hover:bg-dust-beige/25 transition-colors flex items-center justify-center gap-2"
+              className="flex-grow bg-weather-stone border border-dust-beige text-slate-basalt text-sm min-h-[44px] py-2 px-4 hover:bg-dust-beige/25 transition-colors flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
               Reset
@@ -196,7 +196,7 @@ export default function Dashboard({ user }) {
             {user && (user.role === 'admin' || user.role === 'moderator') && (
               <Link
                 to="/promises/new"
-                className="flex-1 bg-pagoda-wood text-himalayan-mist text-sm py-2 px-4 hover:bg-pagoda-wood/90 transition-colors flex items-center justify-center gap-2"
+                className="flex-grow bg-pagoda-wood text-himalayan-mist text-sm min-h-[44px] py-2 px-4 hover:bg-pagoda-wood/90 transition-colors flex items-center justify-center gap-2 text-center"
               >
                 <PlusCircle className="w-4 h-4" />
                 Add Promise

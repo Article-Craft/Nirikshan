@@ -227,7 +227,7 @@ export default function RepresentativeDirectory() {
                   setPartyFilter('');
                   setProvinceFilter('');
                 }}
-                className="w-full py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[10px] font-extrabold uppercase rounded transition-colors text-slate-700"
+                className="w-full min-h-[44px] py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[10px] font-extrabold uppercase rounded transition-colors text-slate-700 flex items-center justify-center"
               >
                 Clear Filters
               </button>

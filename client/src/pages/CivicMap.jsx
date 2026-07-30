@@ -136,10 +136,11 @@ export default function CivicMap() {
     if (!mapContainerRef.current) return;
 
     // Create map centered on Nepal
+    const isMobile = window.innerWidth < 768;
     const map = L.map(mapContainerRef.current, {
-      center: [28.0, 84.8], // Centralized to show Kathmandu & Pokhara clearly
-      zoom: 7,
-      minZoom: 6,
+      center: isMobile ? [28.0, 84.4] : [28.0, 84.8], // Centralized to show Kathmandu & Pokhara clearly
+      zoom: isMobile ? 6 : 7,
+      minZoom: 5.5,
       maxZoom: 14,
       zoomControl: false,
       attributionControl: false
@@ -166,6 +167,11 @@ export default function CivicMap() {
         lng: lng.toFixed(5)
       }));
       setShowReportForm(true);
+      if (window.innerWidth < 1024) {
+        setTimeout(() => {
+          document.getElementById('civic-details-panel')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
     });
 
     return () => {
@@ -219,6 +225,11 @@ export default function CivicMap() {
       marker.on('click', () => {
         setSelectedEvent(evt);
         map.setView([evt.lat, evt.lng], Math.max(map.getZoom(), 9), { animate: true });
+        if (window.innerWidth < 1024) {
+          setTimeout(() => {
+            document.getElementById('civic-details-panel')?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
       });
 
       marker.addTo(markersGroup);
@@ -231,6 +242,11 @@ export default function CivicMap() {
     const map = leafletMapRef.current;
     if (map) {
       map.setView([evt.lat, evt.lng], 10, { animate: true });
+    }
+    if (window.innerWidth < 1024) {
+      setTimeout(() => {
+        document.getElementById('civic-details-panel')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
   };
 
@@ -413,7 +429,7 @@ export default function CivicMap() {
         <div className="lg:col-span-8 flex flex-col gap-6">
           
           {/* Map Container */}
-          <div className="relative h-[480px] w-full border border-dust-beige shadow-inner bg-[#F5EFE1] overflow-hidden rounded-sm">
+          <div className="relative h-[320px] sm:h-[480px] w-full border border-dust-beige shadow-inner bg-[#F5EFE1] overflow-hidden rounded-sm">
             <div ref={mapContainerRef} className="h-full w-full z-10" />
             
             {/* Aged Parchment Overlay Effect */}
@@ -429,7 +445,7 @@ export default function CivicMap() {
           {/* Event Detail Panel or Report Form */}
           {showReportForm ? (
             /* REPORT FORM PANEL */
-            <div className="bg-weather-stone/30 border-2 border-dust-beige p-6 rounded-sm shadow-md animate-fadeIn">
+            <div id="civic-details-panel" className="bg-weather-stone/30 border-2 border-dust-beige p-6 rounded-sm shadow-md animate-fadeIn scroll-mt-6">
               <div className="flex justify-between items-center border-b border-dust-beige/60 pb-3 mb-4">
                 <h3 className="text-lg font-serif text-pagoda-wood flex items-center gap-1.5">
                   <Plus className="w-5 h-5 text-temple-brass" /> Log Civic Watchdog Event
@@ -577,7 +593,7 @@ export default function CivicMap() {
             </div>
           ) : selectedEvent ? (
             /* SELECTED EVENT DETAIL CARD */
-            <div className="bg-weather-stone border-2 border-dust-beige p-6 rounded-sm shadow-md space-y-4 animate-fadeIn relative">
+            <div id="civic-details-panel" className="bg-weather-stone border-2 border-dust-beige p-6 rounded-sm shadow-md space-y-4 animate-fadeIn relative scroll-mt-6">
               <div className="absolute top-2 left-2 right-2 bottom-2 border border-dust-beige/50 pointer-events-none" />
               
               {/* Event Meta Row */}

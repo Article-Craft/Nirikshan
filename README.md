@@ -12,7 +12,7 @@
 
 ## Overview
 
-Nirikshan (निरीक्षण) is a citizen-centric government watchdog platform designed to promote transparency, accountability, and civic engagement in Nepal. The application bridges the information gap between public offices and citizens by providing accessible tools to monitor public works, track progress, and report local grievances. This platform was built as a final year academic project by a 5-member team.
+Nirikshan (निरीक्षण) is a citizen-centric government watchdog platform designed to promote transparency, accountability, and civic engagement in Nepal. The application bridges the information gap between public offices and citizens by providing accessible tools to monitor public works, track progress, and report local grievances. This platform was built as a final year academic project by a 5-member team. (Last updated: July 2026)
 
 ## Key Features
 

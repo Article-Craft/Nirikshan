@@ -160,7 +160,7 @@ export default function CreatePromise() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-pagoda-wood text-himalayan-mist font-semibold py-2.5 hover:bg-pagoda-wood/90 transition-colors disabled:opacity-40"
+            className="w-full bg-pagoda-wood text-himalayan-mist font-semibold min-h-[44px] py-2.5 hover:bg-pagoda-wood/90 transition-colors disabled:opacity-40 flex items-center justify-center"
           >
             {loading ? 'Registering...' : 'Register Promise'}
           </button>

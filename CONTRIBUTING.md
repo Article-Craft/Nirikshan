@@ -3,7 +3,7 @@
 > [!WARNING]
 > **Data Credibility Principle:** Never commit mock, generated, or fake CDO names or telephone numbers to the codebase. All administrative dossiers must represent verified official government data, or be explicitly left as `null`.
 
-Welcome to the Nirikshan development team! Please read these guidelines to keep our codebase clean, secure, and visually consistent.
+Welcome to the Nirikshan development team! Please read these guidelines to keep our codebase clean, secure, and visually consistent. (Guidance updated for mobile responsiveness rules)
 
 ---
 

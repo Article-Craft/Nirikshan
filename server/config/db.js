@@ -6,9 +6,10 @@ let sequelize;
 
 if (!databaseUrl || databaseUrl.startsWith('sqlite:')) {
   console.log('Initializing with SQLite database.');
+  const isMemory = databaseUrl === 'sqlite::memory:';
   sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: require('path').join(__dirname, '..', 'nirikshan.sqlite'),
+    storage: isMemory ? ':memory:' : require('path').join(__dirname, '..', 'nirikshan.sqlite'),
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     define: {
       timestamps: false,

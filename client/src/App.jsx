@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import PromiseDetail from './pages/PromiseDetail';
 import ModeratorDashboard from './pages/ModeratorDashboard';
@@ -11,13 +11,187 @@ import RtiAssistant from './pages/RtiAssistant';
 import CivicMap from './pages/CivicMap';
 import LandingPage from './pages/LandingPage';
 import { authAPI } from './api';
-import { ShieldCheck, UserCheck, LogOut, Loader, Award, Shield, Mail, Phone, MapPin, Globe } from 'lucide-react';
+import { ShieldCheck, UserCheck, LogOut, Loader, Award, Shield, Mail, Phone, MapPin, Globe, Menu, X } from 'lucide-react';
+
+function Header({ user, setUser }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+  const showLoginLink = location.pathname !== '/';
+  const isLoggedIn = user && !user.isAnonymous;
+
+  // Close menu on link click
+  const closeMenu = () => setIsOpen(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('nirikshan_token');
+    localStorage.removeItem('nirikshan_user');
+    setUser(null);
+    closeMenu();
+    navigate('/');
+  };
+
+  return (
+    <header className="bg-pagoda-wood text-himalayan-mist border-b border-dust-beige shadow-sm relative z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
+        <Link to="/" onClick={closeMenu} className="flex items-center gap-3 group">
+          <img src="/logo.png" alt="Nirikshan Logo" className="w-10 h-10 object-contain rounded-full p-1 bg-white border border-dust-beige shadow-sm" />
+          <span className="text-lg sm:text-2xl font-serif tracking-wider font-extrabold text-himalayan-mist group-hover:text-temple-brass transition-colors">
+            NIRIKSHAN <span className="font-sans font-light text-xs sm:text-sm tracking-widest text-temple-brass block md:inline md:ml-2">निरीक्षण</span>
+          </span>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-6">
+          {isLoggedIn && (
+            <>
+              <Link to="/promises" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Promises Feed
+              </Link>
+
+              <Link to="/map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Interactive Map
+              </Link>
+
+              <Link to="/directory" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Representatives Directory
+              </Link>
+
+              <Link to="/rti" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                RTI Assistant
+              </Link>
+
+              <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                Civic Map
+              </Link>
+              
+              {(user.role === 'moderator' || user.role === 'admin') && (
+                <Link
+                  to="/moderation"
+                  className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors flex items-center gap-1 text-temple-brass"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Moderation
+                </Link>
+              )}
+            </>
+          )}
+
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3 border-l border-dust-beige/30 pl-6">
+              <span className="text-xs text-slate-basalt bg-weather-stone px-2.5 py-1 font-semibold flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-temple-brass" />
+                {user.name} ({user.role})
+              </span>
+              <button
+                onClick={() => { handleLogout(); closeMenu(); }}
+                title="Log Out"
+                className="text-himalayan-mist/70 hover:text-status-broken transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 border-l border-dust-beige/30 pl-6">
+              <a 
+                href="/#auth-section" 
+                onClick={(e) => {
+                  if (location.pathname === '/') {
+                    e.preventDefault();
+                    document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="text-xs uppercase tracking-wider font-extrabold bg-temple-brass hover:bg-temple-brass/90 text-pagoda-wood px-4 py-2.5 rounded transition-all duration-200 shadow-sm border border-temple-brass/20 hover:scale-105 active:scale-95"
+              >
+                Sign In / Register
+              </a>
+            </div>
+          )}
+        </nav>
+
+        {/* Hamburger menu button for mobile */}
+        <div className="flex md:hidden items-center">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-himalayan-mist hover:text-temple-brass focus:outline-none"
+          >
+            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Dropdown */}
+      {isOpen && (
+        <div className="md:hidden bg-slate-900 border-b border-dust-beige/20 px-4 py-6 space-y-4 animate-fade-in absolute top-20 left-0 w-full shadow-lg z-[1050]">
+          {isLoggedIn ? (
+            <div className="flex flex-col space-y-3">
+              <div className="pb-3 border-b border-white/10 mb-2 flex items-center justify-between">
+                <span className="text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-temple-brass" />
+                  {user.name} ({user.role})
+                </span>
+                <button
+                  onClick={() => { handleLogout(); closeMenu(); }}
+                  className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Logout
+                </button>
+              </div>
+              <Link to="/promises" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                Promises Feed
+              </Link>
+              <Link to="/map" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                Interactive Map
+              </Link>
+              <Link to="/directory" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                Representatives Directory
+              </Link>
+              <Link to="/rti" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                RTI Assistant
+              </Link>
+              <Link to="/civic-map" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors">
+                Civic Map
+              </Link>
+              {(user.role === 'moderator' || user.role === 'admin') && (
+                <Link to="/moderation" onClick={closeMenu} className="text-sm uppercase tracking-wider font-semibold block hover:text-temple-brass transition-colors text-temple-brass">
+                  Moderation
+                </Link>
+              )}
+            </div>
+          ) : (
+            <a 
+              href="/#auth-section" 
+              onClick={(e) => {
+                closeMenu();
+                if (location.pathname === '/') {
+                  e.preventDefault();
+                  document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }} 
+              className="text-sm uppercase tracking-wider font-bold bg-temple-brass hover:bg-temple-brass/90 text-pagoda-wood px-4 py-2.5 rounded block text-center transition-all duration-200 shadow-sm"
+            >
+              Sign In / Register
+            </a>
+          )}
+        </div>
+      )}
+    </header>
+  );
+}
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showPreloader, setShowPreloader] = useState(true);
   const [preloaderFade, setPreloaderFade] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  const loadingSteps = [
+    "Establishing secure connection to Nirikshan backend...",
+    "Fetching 77 district administrative dossiers...",
+    "Verifying constituency representative records...",
+    "Initializing civic watchdog mapping system..."
+  ];
 
   // Auto sign-in or check existing session on mount
   useEffect(() => {
@@ -36,105 +210,72 @@ export default function App() {
     };
     initSession();
 
+    // Cycle through loading steps
+    const stepInterval = setInterval(() => {
+      setLoadingStep(prev => (prev < loadingSteps.length - 1 ? prev + 1 : prev));
+    }, 500);
+
     // Start preloader fade-out sequence
-    const timerFade = setTimeout(() => setPreloaderFade(true), 1300);
-    const timerRemove = setTimeout(() => setShowPreloader(false), 1800);
+    const timerFade = setTimeout(() => setPreloaderFade(true), 2100);
+    const timerRemove = setTimeout(() => setShowPreloader(false), 2600);
+    
     return () => {
+      clearInterval(stepInterval);
       clearTimeout(timerFade);
       clearTimeout(timerRemove);
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('nirikshan_token');
-    localStorage.removeItem('nirikshan_user');
-    setUser(null);
-    window.location.reload();
-  };
 
   const isPreloading = loading || showPreloader;
 
   return (
     <>
       {isPreloading && (
-        <div className={`fixed inset-0 bg-pagoda-wood z-[9999] flex flex-col items-center justify-center text-himalayan-mist transition-opacity duration-500 ${preloaderFade ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-          <div className="flex flex-col items-center space-y-6">
-            <img src="/logo.png" alt="Nirikshan Logo" className="w-24 h-24 object-contain rounded-full p-2 bg-white border-2 border-temple-brass shadow-xl animate-pulse" />
-            <h1 className="text-3xl font-serif tracking-wider font-extrabold text-himalayan-mist text-center">
-               NIRIKSHAN <span className="font-sans font-light text-lg tracking-widest text-temple-brass block text-center mt-2">निरीक्षण</span>
-            </h1>
-            <p className="text-himalayan-mist/60 text-xs tracking-widest uppercase text-center">Citizen Government Watchdog</p>
+        <div className={`fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-pagoda-wood z-[9999] flex flex-col items-center justify-center text-himalayan-mist transition-opacity duration-700 ${preloaderFade ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          {/* Glowing background blur blobs */}
+          <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-nepal-red/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-temple-brass/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+
+          <div className="relative z-10 bg-slate-900/60 backdrop-blur-xl border border-white/10 p-8 sm:p-12 rounded-2xl shadow-2xl flex flex-col items-center space-y-6 max-w-sm w-full mx-4 text-center">
+            {/* Logo container with pulse glow and rotation */}
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border border-dashed border-temple-brass/40 animate-[spin_10s_linear_infinite]"></div>
+              <div className="absolute inset-2 rounded-full border border-double border-nepal-red/30 animate-[spin_6s_linear_infinite_reverse]"></div>
+              <img 
+                src="/logo.png" 
+                alt="Nirikshan Logo" 
+                className="relative w-20 h-20 object-contain rounded-full p-1 bg-slate-950 border border-temple-brass/40 shadow-2xl" 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <h1 className="text-3xl font-serif tracking-wider font-extrabold text-white">
+                 NIRIKSHAN <span className="font-sans font-light text-base tracking-widest text-temple-brass block mt-1.5">निरीक्षण</span>
+              </h1>
+              <p className="text-himalayan-mist/50 text-[10px] tracking-widest uppercase font-bold">Citizen Government Watchdog</p>
+            </div>
+
+            {/* Step text */}
+            <div className="h-6 flex items-center justify-center">
+              <p className="text-[11px] text-slate-300 font-medium italic transition-all duration-300">
+                {loadingSteps[loadingStep]}
+              </p>
+            </div>
+
+            {/* Loading progression bar */}
+            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden relative">
+              <div 
+                className="bg-gradient-to-r from-nepal-red via-temple-brass to-nepal-red h-full rounded-full absolute top-0 left-0 transition-all duration-500" 
+                style={{ width: `${(loadingStep + 1) * 25}%` }}
+              />
+            </div>
           </div>
         </div>
       )}
       <Router>
         <div className="min-h-screen flex flex-col bg-himalayan-mist font-sans">
-          {/* Institutional Navbar */}
-          <header className="bg-pagoda-wood text-himalayan-mist border-b border-dust-beige shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
-              <Link to="/" className="flex items-center gap-3 group">
-                <img src="/logo.png" alt="Nirikshan Logo" className="w-10 h-10 object-contain rounded-full p-1 bg-white border border-dust-beige shadow-sm" />
-                <span className="text-2xl font-serif tracking-wider font-extrabold text-himalayan-mist group-hover:text-temple-brass transition-colors">
-                  NIRIKSHAN <span className="font-sans font-light text-sm tracking-widest text-temple-brass block md:inline md:ml-2">निरीक्षण</span>
-                </span>
-              </Link>
-
-              <nav className="flex items-center gap-6">
-                <Link to="/promises" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  Promises Feed
-                </Link>
-
-                <Link to="/map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  Interactive Map
-                </Link>
-
-                <Link to="/directory" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  Representatives Directory
-                </Link>
-
-                <Link to="/rti" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  RTI Assistant
-                </Link>
-
-                <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  Civic Map
-                </Link>
-                
-                {user && !user.isAnonymous && (user.role === 'moderator' || user.role === 'admin') && (
-                  <Link
-                    to="/moderation"
-                    className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors flex items-center gap-1 text-temple-brass"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    Moderation
-                  </Link>
-                )}
-
-                {user && !user.isAnonymous ? (
-                  <div className="flex items-center gap-3 border-l border-dust-beige/30 pl-6">
-                    <span className="text-xs text-slate-basalt bg-weather-stone px-2.5 py-1 font-semibold flex items-center gap-1">
-                      <UserCheck className="w-3.5 h-3.5 text-temple-brass" />
-                      {user.name} ({user.role})
-                    </span>
-                    <button
-                      onClick={handleLogout}
-                      title="Log Out"
-                      className="text-himalayan-mist/70 hover:text-status-broken transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 border-l border-dust-beige/30 pl-6">
-                    <a href="/#auth-section" className="text-xs uppercase tracking-wider font-bold text-temple-brass hover:underline">
-                      Auditor Login
-                    </a>
-                  </div>
-                )}
-              </nav>
-            </div>
-          </header>
-
+          <Header user={user} setUser={setUser} />
           {/* Page Content */}
           <main className="flex-grow">
             {/* Client-side routing configuration for Nirikshan */}

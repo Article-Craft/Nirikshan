@@ -314,7 +314,7 @@ export default function RepresentativeReportCard() {
             </div>
 
             {/* Rating Box */}
-            <div className="bg-[#FAF9F6] p-6 border border-slate-200 rounded shadow-sm min-w-[280px] shrink-0 text-left">
+            <div className="bg-[#FAF9F6] p-6 border border-slate-200 rounded shadow-sm w-full md:w-auto md:min-w-[280px] shrink-0 text-left">
               <h3 className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-3">
                 Citizen Trust Index
               </h3>

@@ -93,12 +93,12 @@ export default function App() {
     <>
       {isPreloading && (
         <div className={`fixed inset-0 bg-pagoda-wood z-[9999] flex flex-col items-center justify-center text-himalayan-mist transition-opacity duration-500 ${preloaderFade ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 border-4 border-temple-brass border-t-transparent rounded-full animate-spin mb-6"></div>
+          <div className="flex flex-col items-center space-y-6">
+            <img src="/logo.png" alt="Nirikshan Logo" className="w-24 h-24 object-contain animate-pulse" />
             <h1 className="text-3xl font-serif tracking-wider font-extrabold text-himalayan-mist text-center">
               NIRIKSHAN <span className="font-sans font-light text-lg tracking-widest text-temple-brass block text-center mt-2">निरीक्षण</span>
             </h1>
-            <p className="text-himalayan-mist/60 text-xs tracking-widest uppercase mt-4 text-center">Citizen Government Watchdog</p>
+            <p className="text-himalayan-mist/60 text-xs tracking-widest uppercase text-center">Citizen Government Watchdog</p>
           </div>
         </div>
       )}
@@ -107,7 +107,8 @@ export default function App() {
           {/* Institutional Navbar */}
           <header className="bg-pagoda-wood text-himalayan-mist border-b border-dust-beige shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
-              <Link to="/" className="flex items-center gap-2 group">
+              <Link to="/" className="flex items-center gap-3 group">
+                <img src="/logo.png" alt="Nirikshan Logo" className="w-10 h-10 object-contain" />
                 <span className="text-2xl font-serif tracking-wider font-extrabold text-himalayan-mist group-hover:text-temple-brass transition-colors">
                   NIRIKSHAN <span className="font-sans font-light text-sm tracking-widest text-temple-brass block md:inline md:ml-2">निरीक्षण</span>
                 </span>

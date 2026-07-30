@@ -67,9 +67,12 @@ export default function LandingPage({ setUser }) {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-weather-stone/60 border border-dust-beige text-pagoda-wood text-xs font-semibold uppercase tracking-wider rounded-sm">
               <Landmark className="w-4 h-4 text-temple-brass" /> Official Civic Watchdog Portal
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-pagoda-wood leading-tight tracking-tight">
-              NIRIKSHAN <span className="font-sans font-light text-2xl lg:text-3xl text-temple-brass block sm:inline sm:ml-3">निरीक्षण</span>
-            </h1>
+            <div className="flex items-center gap-4 flex-wrap">
+              <img src="/logo.png" alt="Nirikshan Logo" className="w-16 h-16 object-contain" />
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-pagoda-wood leading-none tracking-tight">
+                NIRIKSHAN <span className="font-sans font-light text-2xl lg:text-3xl text-temple-brass block sm:inline sm:ml-3">निरीक्षण</span>
+              </h1>
+            </div>
             <p className="text-lg text-slate-basalt/90 font-serif leading-relaxed max-w-2xl">
               An independent, data-driven platform monitoring public office performance, tracking representative commitments, 
               and visualizing municipal infrastructure expenditure across Nepal.

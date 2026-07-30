@@ -20,7 +20,12 @@ CREATE TABLE IF NOT EXISTS constituencies (
     name VARCHAR(255) NOT NULL,
     province VARCHAR(255) NOT NULL,
     district_id INTEGER REFERENCES districts(id) ON DELETE SET NULL,
-    winner_representative_id INTEGER
+    winner_representative_id INTEGER,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    map_identifier VARCHAR(255) NOT NULL,
+    election_year INTEGER DEFAULT 2026,
+    vote_count VARCHAR(255) DEFAULT 'pending_verification',
+    victory_margin VARCHAR(255) DEFAULT 'pending_verification'
 );
 
 -- Create Representatives table
@@ -33,7 +38,8 @@ CREATE TABLE IF NOT EXISTS representatives (
     position VARCHAR(255),
     attendance_percent INTEGER,
     bills_sponsored INTEGER,
-    contact_info TEXT
+    contact_info TEXT,
+    bio TEXT
 );
 
 -- Add foreign key constraint to constituencies for winner_representative_id

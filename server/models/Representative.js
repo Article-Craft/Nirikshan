@@ -43,6 +43,10 @@ const Representative = sequelize.define('Representative', {
     type: DataTypes.TEXT,
     field: 'contact_info',
     allowNull: true
+  },
+  bio: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'representatives'

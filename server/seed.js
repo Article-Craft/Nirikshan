@@ -4,23 +4,23 @@ const { District, Constituency, Representative } = require('./models');
 const nepalData = [
   {
     province: 'Koshi Province',
-    districts: ['Bhojpur', 'Dhankuta', 'Ilam', 'Jhapa', 'Khotang', 'Morang', 'Okhaldhunga', 'Panchthar', 'Sankhuwasabha', 'Solukhumbu', 'Sunsari', 'Taplejung', 'Terhathum', 'Udayapur']
+    districts: ['Bhojpur', 'Dhankuta', 'Ilam', 'Jhapa', 'Khotang', 'Morang', 'Okhaldhunga', 'Panchthar', 'Sankhuwasabha', 'Solukhumbu', 'Sunsari', 'Taplejung', 'Tehrathum', 'Udayapur']
   },
   {
     province: 'Madhesh Province',
-    districts: ['Bara', 'Dhanusha', 'Mahottari', 'Parsa', 'Rautahat', 'Saptari', 'Sarlahi', 'Siraha']
+    districts: ['Bara', 'Dhanusa', 'Mahottari', 'Parsa', 'Rautahat', 'Saptari', 'Sarlahi', 'Siraha']
   },
   {
     province: 'Bagmati Province',
-    districts: ['Bhaktapur', 'Chitwan', 'Dhading', 'Dolakha', 'Kathmandu', 'Kavrepalanchok', 'Lalitpur', 'Makwanpur', 'Nuwakot', 'Ramechhap', 'Rasuwa', 'Sindhuli', 'Sindhupalchok']
+    districts: ['Bhaktapur', 'Chitwan', 'Dhading', 'Dolakha', 'Kathmandu', 'Kavrepalanchowk', 'Lalitpur', 'Makwanpur', 'Nuwakot', 'Ramechhap', 'Rasuwa', 'Sindhuli', 'Sindhupalchok']
   },
   {
     province: 'Gandaki Province',
-    districts: ['Baglung', 'Gorkha', 'Kaski', 'Lamjung', 'Manang', 'Mustang', 'Myagdi', 'Nawalpur', 'Parbat', 'Syangja', 'Tanahun']
+    districts: ['Baglung', 'Gorkha', 'Kaski', 'Lamjung', 'Manang', 'Mustang', 'Myagdi', 'Nawalpur', 'Parbat', 'Syangja', 'Tanahu']
   },
   {
     province: 'Lumbini Province',
-    districts: ['Arghakhanchi', 'Banke', 'Bardiya', 'Dang', 'Eastern Rukum', 'Gulmi', 'Kapilvastu', 'Nawalparasi', 'Palpa', 'Pyuthan', 'Rolpa', 'Rupandehi']
+    districts: ['Arghakhanchi', 'Banke', 'Bardiya', 'Dang', 'Eastern Rukum', 'Gulmi', 'Kapilvastu', 'Parasi', 'Palpa', 'Pyuthan', 'Rolpa', 'Rupandehi']
   },
   {
     province: 'Karnali Province',
@@ -32,52 +32,185 @@ const nepalData = [
   }
 ];
 
-const explicitReps = [
-  // Kathmandu
-  { name: 'Prakash Man Singh', party: 'NC', constituencyId: 'KTM-1', position: 'Member of Parliament', attendancePercent: 82, billsSponsored: 4, contactInfo: 'prakash.singh@parliament.gov.np' },
-  { name: 'Sobita Gautam', party: 'RSP', constituencyId: 'KTM-2', position: 'Member of Parliament', attendancePercent: 94, billsSponsored: 8, contactInfo: 'sobita.gautam@parliament.gov.np' },
-  { name: 'Santosh Chalise', party: 'NC', constituencyId: 'KTM-3', position: 'Member of Parliament', attendancePercent: 78, billsSponsored: 3, contactInfo: 'santosh.chalise@parliament.gov.np' },
-  { name: 'Gagan Kumar Thapa', party: 'NC', constituencyId: 'KTM-4', position: 'Member of Parliament', attendancePercent: 90, billsSponsored: 12, contactInfo: 'gagan.thapa@parliament.gov.np' },
-  { name: 'Pradip Paudel', party: 'NC', constituencyId: 'KTM-5', position: 'Member of Parliament', attendancePercent: 88, billsSponsored: 5, contactInfo: 'pradip.paudel@parliament.gov.np' },
-  { name: 'Shishir Khanal', party: 'RSP', constituencyId: 'KTM-6', position: 'Member of Parliament', attendancePercent: 91, billsSponsored: 7, contactInfo: 'shishir.khanal@parliament.gov.np' },
-  { name: 'Ganesh Parajuli', party: 'RSP', constituencyId: 'KTM-7', position: 'Member of Parliament', attendancePercent: 85, billsSponsored: 4, contactInfo: 'ganesh.parajuli@parliament.gov.np' },
-  { name: 'Biraj Bhakta Shrestha', party: 'RSP', constituencyId: 'KTM-8', position: 'Member of Parliament', attendancePercent: 89, billsSponsored: 6, contactInfo: 'biraj.shrestha@parliament.gov.np' },
-  { name: 'Krishna Gopal Shrestha', party: 'UML', constituencyId: 'KTM-9', position: 'Member of Parliament', attendancePercent: 75, billsSponsored: 2, contactInfo: 'krishna.shrestha@parliament.gov.np' },
-  { name: 'Rajendra Kumar KC', party: 'NC', constituencyId: 'KTM-10', position: 'Member of Parliament', attendancePercent: 80, billsSponsored: 3, contactInfo: 'rajendra.kc@parliament.gov.np' },
-  // Lalitpur
-  { name: 'Udaya Shumsher Rana', party: 'NC', constituencyId: 'LPT-1', position: 'Member of Parliament', attendancePercent: 83, billsSponsored: 5, contactInfo: 'udaya.rana@parliament.gov.np' },
-  { name: 'Prem Bahadur Maharjan', party: 'UML', constituencyId: 'LPT-2', position: 'Member of Parliament', attendancePercent: 79, billsSponsored: 2, contactInfo: 'prem.maharjan@parliament.gov.np' },
-  { name: 'Dr. Toshima Karki', party: 'RSP', constituencyId: 'LPT-3', position: 'Member of Parliament', attendancePercent: 95, billsSponsored: 10, contactInfo: 'toshima.karki@parliament.gov.np' },
-  // Jhapa
-  { name: 'Vishwa Prakash Sharma', party: 'NC', constituencyId: 'JHP-1', position: 'Member of Parliament', attendancePercent: 87, billsSponsored: 6, contactInfo: 'vishwa.sharma@parliament.gov.np' },
-  { name: 'Devraj Ghimire', party: 'UML', constituencyId: 'JHP-2', position: 'Speaker of House', attendancePercent: 99, billsSponsored: 1, contactInfo: 'speaker@parliament.gov.np' },
-  { name: 'Rajendra Lingden', party: 'RPP', constituencyId: 'JHP-3', position: 'Member of Parliament', attendancePercent: 84, billsSponsored: 3, contactInfo: 'rajendra.lingden@parliament.gov.np' },
-  { name: 'Lal Prasad Sawa Limbu', party: 'UML', constituencyId: 'JHP-4', position: 'Member of Parliament', attendancePercent: 80, billsSponsored: 2, contactInfo: 'lal.sawa@parliament.gov.np' },
-  { name: 'Kharga Prasad (K.P.) Oli', party: 'UML', constituencyId: 'JHP-5', position: 'Member of Parliament', attendancePercent: 70, billsSponsored: 4, contactInfo: 'kp.oli@parliament.gov.np' },
-  // Chitwan
-  { name: 'Hari Dhakal', party: 'RSP', constituencyId: 'CTW-1', position: 'Member of Parliament', attendancePercent: 88, billsSponsored: 5, contactInfo: 'hari.dhakal@parliament.gov.np' },
-  { name: 'Rabi Lamichhane', party: 'RSP', constituencyId: 'CTW-2', position: 'Member of Parliament', attendancePercent: 85, billsSponsored: 9, contactInfo: 'rabi.lamichhane@parliament.gov.np' },
-  { name: 'Dr. Bikram Pandey', party: 'RPP', constituencyId: 'CTW-3', position: 'Member of Parliament', attendancePercent: 72, billsSponsored: 2, contactInfo: 'bikram.pandey@parliament.gov.np' },
-  // Kaski
-  { name: 'Man Bahadur Gurung', party: 'UML', constituencyId: 'KSK-1', position: 'Member of Parliament', attendancePercent: 81, billsSponsored: 3, contactInfo: 'man.gurung@parliament.gov.np' },
-  { name: 'Bidya Bhattarai', party: 'UML', constituencyId: 'KSK-2', position: 'Member of Parliament', attendancePercent: 86, billsSponsored: 4, contactInfo: 'bidya.bhattarai@parliament.gov.np' },
-  { name: 'Damodar Bairagi', party: 'UML', constituencyId: 'KSK-3', position: 'Member of Parliament', attendancePercent: 83, billsSponsored: 3, contactInfo: 'damodar.bairagi@parliament.gov.np' },
-  // Gorkha
-  { name: 'Rajendra Bajgain', party: 'NC', constituencyId: 'GRK-1', position: 'Member of Parliament', attendancePercent: 84, billsSponsored: 4, contactInfo: 'rajendra.bajgain@parliament.gov.np' },
-  { name: 'Pushpa Kamal Dahal (Prachanda)', party: 'MC', constituencyId: 'GRK-2', position: 'Member of Parliament', attendancePercent: 78, billsSponsored: 5, contactInfo: 'prachanda@parliament.gov.np' },
-  // Gulmi
-  { name: 'Hon. Pradeep Gyawali', party: 'UML', constituencyId: 'GLM-1', position: 'Member of Parliament', attendancePercent: 85, billsSponsored: 7, contactInfo: 'pradeep.gyawali@parliament.gov.np' }
+const canonicalWinners = [
+  { name: 'Achham 1', winner: 'Bharat Kumar Swar', party: 'Nepali Congress' },
+  { name: 'Achham 2', winner: 'Yagya Bahadur Bogati', party: 'CPN (UML)' },
+  { name: 'Arghakhanchi 1', winner: 'Hari Prasad Bhusal', party: 'RSP' },
+  { name: 'Baglung 1', winner: 'Sushil Khadka', party: 'RSP' },
+  { name: 'Baglung 2', winner: 'Som Sharma', party: 'RSP' },
+  { name: 'Baitadi 1', winner: 'Hari Mohan Bhandari', party: 'RSP' },
+  { name: 'Bajhang 1', winner: 'Ain Bahadur Mahar', party: 'CPN (UML)' },
+  { name: 'Bajura 1', winner: 'Janak Raj Giri', party: 'Nepali Congress' },
+  { name: 'Banke 1', winner: 'Suresh Kumar Chaudhary', party: 'RSP' },
+  { name: 'Banke 2', winner: 'Mohammad Ishtiyaq Rayi', party: 'CPN (UML)' },
+  { name: 'Banke 3', winner: 'Khagendra Sunar', party: 'RSP' },
+  { name: 'Bara 1', winner: 'Ganesh Dhimal', party: 'RSP' },
+  { name: 'Bara 2', winner: 'Chandan Kumar Singh', party: 'RSP' },
+  { name: 'Bara 3', winner: 'Arvind Sah', party: 'RSP' },
+  { name: 'Bara 4', winner: 'Rahbar Ansari', party: 'RSP' },
+  { name: 'Bardiya 1', winner: 'Thakur Singh Tharu', party: 'RSP' },
+  { name: 'Bardiya 2', winner: 'Shreedhar Pokharel', party: 'RSP' },
+  { name: 'Bhaktapur 1', winner: 'Rukesh Ranjit', party: 'RSP' },
+  { name: 'Bhaktapur 2', winner: 'Rajiv Khatri', party: 'RSP' },
+  { name: 'Bhojpur 1', winner: 'Dhurbaraj Rai', party: 'Shram Sanskriti Party' },
+  { name: 'Chitwan 1', winner: 'Hari Dhakal', party: 'RSP' },
+  { name: 'Chitwan 2', winner: 'Rabi Lamichhane', party: 'RSP' },
+  { name: 'Chitwan 3', winner: 'Sobita Gautam', party: 'RSP' },
+  { name: 'Dadeldhura 1', winner: 'Tara Prasad Joshi', party: 'RSP' },
+  { name: 'Dailekh 1', winner: 'Basana Thapa', party: 'Nepali Congress' },
+  { name: 'Dailekh 2', winner: 'Laxmi Prasad Pokharel', party: 'CPN (UML)' },
+  { name: 'Dang 1', winner: 'Devraj Pathak', party: 'RSP' },
+  { name: 'Dang 2', winner: 'Bipin Kumar Acharya', party: 'RSP' },
+  { name: 'Dang 3', winner: 'Kamal Subedi', party: 'RSP' },
+  { name: 'Darchula 1', winner: 'Ganesh Singh Thagunna', party: 'CPN (UML)' },
+  { name: 'Dhading 1', winner: 'Ashika Tamang', party: 'RSP' },
+  { name: 'Dhading 2', winner: 'Bodh Narayan Shrestha', party: 'RSP' },
+  { name: 'Dhankuta 1', winner: 'Rajendra Kumar Rai', party: 'CPN (UML)' },
+  { name: 'Dhanusha 1', winner: 'Matrika Prasad Yadav', party: 'Nepali Communist Party' },
+  { name: 'Dhanusha 2', winner: 'Ram Binod Yadav', party: 'RSP' },
+  { name: 'Dhanusha 3', winner: 'Manish Jha', party: 'RSP' },
+  { name: 'Dhanusha 4', winner: 'Raj Kishor Mahato', party: 'RSP' },
+  { name: 'Dolakha 1', winner: 'Jagadish Kharel', party: 'RSP' },
+  { name: 'Dolpa 1', winner: 'Dhan Bahadur Buda', party: 'Nepali Communist Party' },
+  { name: 'Doti 1', winner: 'Bharat Bahadur Khadka', party: 'Nepali Congress' },
+  { name: 'Gorkha 1', winner: 'Sudan Gurung', party: 'RSP' },
+  { name: 'Gorkha 2', winner: 'Kabindra Burlakoti', party: 'RSP' },
+  { name: 'Gulmi 1', winner: 'Sagar Dhakal', party: 'RSP' },
+  { name: 'Gulmi 2', winner: 'Govinda Panthi', party: 'RSP' },
+  { name: 'Humla 1', winner: 'Jayapati Rokaya', party: 'Nepali Congress' },
+  { name: 'Ilam 1', winner: 'Nishkal Rai', party: 'Nepali Congress' },
+  { name: 'Ilam 2', winner: 'Suhang Nembang', party: 'CPN (UML)' },
+  { name: 'Jajarkot 1', winner: 'Khadak Bahadur Budha', party: 'Nepali Congress' },
+  { name: 'Jhapa 1', winner: 'Nisha Dangi', party: 'RSP' },
+  { name: 'Jhapa 2', winner: 'Indira Rana Magar', party: 'RSP' },
+  { name: 'Jhapa 3', winner: 'Prakash Pathak', party: 'RSP' },
+  { name: 'Jhapa 4', winner: 'Shambhu Prasad Dhakal', party: 'RSP' },
+  { name: 'Jhapa 5', winner: 'Balen Shah', party: 'RSP' },
+  { name: 'Jumla 1', winner: 'Gyanendra Shahi', party: 'Rastriya Prajatantra Party' },
+  { name: 'Kailali 1', winner: 'Komal Gyawali', party: 'RSP' },
+  { name: 'Kailali 2', winner: 'K. P. Khanal', party: 'RSP' },
+  { name: 'Kailali 3', winner: 'Jagat Prasad Joshi', party: 'RSP' },
+  { name: 'Kailali 4', winner: 'Khem Raj Koirala', party: 'RSP' },
+  { name: 'Kailali 5', winner: 'Ananda Bahadur Chand', party: 'RSP' },
+  { name: 'Kalikot 1', winner: 'Mahendra Bahadur Shahi', party: 'Nepali Communist Party' },
+  { name: 'Kanchanpur 1', winner: 'Janak Singh Dhami', party: 'RSP' },
+  { name: 'Kanchanpur 2', winner: 'Deepak Raj Bohara', party: 'RSP' },
+  { name: 'Kanchanpur 3', winner: 'Gyanendra Singh Mahata', party: 'RSP' },
+  { name: 'Kapilvastu 1', winner: 'Mohan Lal Acharya', party: 'RSP' },
+  { name: 'Kapilvastu 2', winner: 'Bikram Thapa', party: 'RSP' },
+  { name: 'Kapilvastu 3', winner: 'Abhishek Pratap Shah', party: 'Nepali Congress' },
+  { name: 'Kaski 1', winner: 'Khadak Raj Paudel', party: 'RSP' },
+  { name: 'Kaski 2', winner: 'Uttam Prasad Paudel', party: 'RSP' },
+  { name: 'Kaski 3', winner: 'Bina Gurung', party: 'RSP' },
+  { name: 'Kathmandu 1', winner: 'Ranju Darshana', party: 'RSP' },
+  { name: 'Kathmandu 2', winner: 'Sunil K.C.', party: 'RSP' },
+  { name: 'Kathmandu 3', winner: 'Rajunath Pandey', party: 'RSP' },
+  { name: 'Kathmandu 4', winner: 'Pukar Bam', party: 'RSP' },
+  { name: 'Kathmandu 5', winner: 'Sasmit Pokharel', party: 'RSP' },
+  { name: 'Kathmandu 6', winner: 'Shishir Khanal', party: 'RSP' },
+  { name: 'Kathmandu 7', winner: 'Ganesh Parajuli', party: 'RSP' },
+  { name: 'Kathmandu 8', winner: 'Biraj Bhakta Shrestha', party: 'RSP' },
+  { name: 'Kathmandu 9', winner: 'Dol Prasad Aryal', party: 'RSP' },
+  { name: 'Kathmandu 10', winner: 'Pradip Bista', party: 'RSP' },
+  { name: 'Kavrepalanchok 1', winner: 'Madhu Kumar Chaulagain', party: 'RSP' },
+  { name: 'Kavrepalanchok 2', winner: 'Badan Kumar Bhandari', party: 'RSP' },
+  { name: 'Khotang 1', winner: 'Aaren Rai', party: 'Shram Sanskriti Party' },
+  { name: 'Lalitpur 1', winner: 'Buddha Ratna Maharjan', party: 'RSP' },
+  { name: 'Lalitpur 2', winner: 'Jagdish Kharel', party: 'RSP' },
+  { name: 'Lalitpur 3', winner: 'Toshima Karki', party: 'RSP' },
+  { name: 'Lamjung 1', winner: 'Dharmaraj K.C.', party: 'RSP' },
+  { name: 'Mahottari 1', winner: 'Pramod Kumar Mahato', party: 'RSP' },
+  { name: 'Mahottari 2', winner: 'Dipak Kumar Sah', party: 'RSP' },
+  { name: 'Mahottari 3', winner: 'Ujjawal Kumar Jha', party: 'RSP' },
+  { name: 'Mahottari 4', winner: 'Gauri Kumari', party: 'RSP' },
+  { name: 'Makwanpur 1', winner: 'Prakash Gautam', party: 'RSP' },
+  { name: 'Makwanpur 2', winner: 'Prashant Uprety', party: 'RSP' },
+  { name: 'Manang 1', winner: 'Tek Bahadur Gurung', party: 'Nepali Congress' },
+  { name: 'Morang 1', winner: 'Yagyamani Neupane', party: 'RSP' },
+  { name: 'Morang 2', winner: 'Krishna Kumar Karki', party: 'RSP' },
+  { name: 'Morang 3', winner: 'Ganesh Karki', party: 'RSP' },
+  { name: 'Morang 4', winner: 'Santosh Rajbanshi', party: 'RSP' },
+  { name: 'Morang 5', winner: 'Asha Jha', party: 'RSP' },
+  { name: 'Morang 6', winner: 'Rubina Acharya', party: 'RSP' },
+  { name: 'Mugu 1', winner: 'Khadga Shahi', party: 'Nepali Congress' },
+  { name: 'Mustang 1', winner: 'Yogesh Gauchan Thakali', party: 'Nepali Congress' },
+  { name: 'Myagdi 1', winner: 'Mahabir Pun', party: 'Independent' },
+  { name: 'Nawalpur 1', winner: 'Rajan Gautam', party: 'RSP' },
+  { name: 'Nawalpur 2', winner: 'Manish Khanal', party: 'RSP' },
+  { name: 'Nuwakot 1', winner: 'Bikram Timilsina', party: 'RSP' },
+  { name: 'Nuwakot 2', winner: 'Achuttam Lamichhane', party: 'RSP' },
+  { name: 'Okhaldhunga 1', winner: 'Bishwaraj Pokharel', party: 'RSP' },
+  { name: 'Palpa 1', winner: 'Sandeep Rana', party: 'Nepali Congress' },
+  { name: 'Palpa 2', winner: 'Madhav Bahadur Thapa', party: 'RSP' },
+  { name: 'Panchthar 1', winner: 'Narendra Kerung', party: 'Nepali Congress' },
+  { name: 'Parasi 1 (Nawalparasi)', winner: 'Bikram Khanal', party: 'RSP' },
+  { name: 'Parasi 2 (Nawalparasi)', winner: 'Narendra Kumar Gupta', party: 'RSP' },
+  { name: 'Parbat 1', winner: 'Sagar Bhusal', party: 'RSP' },
+  { name: 'Parsa 1', winner: 'Buddhi Prasad Pant', party: 'RSP' },
+  { name: 'Parsa 2', winner: 'Sushil Kumar Kanu', party: 'RSP' },
+  { name: 'Parsa 3', winner: 'Ramakant Chaurasiya', party: 'RSP' },
+  { name: 'Parsa 4', winner: 'Tek Bahadur Shakya', party: 'RSP' },
+  { name: 'Pyuthan 1', winner: 'Sushant Vaidik', party: 'RSP' },
+  { name: 'Ramechhap 1', winner: 'Krishna Hari Budhathoki', party: 'RSP' },
+  { name: 'Rasuwa 1', winner: 'Mohan Acharya', party: 'Nepali Congress' },
+  { name: 'Rautahat 1', winner: 'Rajesh Kumar Chaudhary', party: 'RSP' },
+  { name: 'Rautahat 2', winner: 'Firdosh Alam', party: 'Nepali Congress' },
+  { name: 'Rautahat 3', winner: 'Ravindra Patel', party: 'RSP' },
+  { name: 'Rautahat 4', winner: 'Ganesh Paudel', party: 'RSP' },
+  { name: 'Rolpa 1', winner: 'Barshman Pun', party: 'Nepali Communist Party' },
+  { name: 'Eastern Rukum 1', winner: 'Pushpa Kamal Dahal', party: 'Nepali Communist Party' },
+  { name: 'Western Rukum 1', winner: 'Gopal Sharma', party: 'Nepali Communist Party' },
+  { name: 'Rupandehi 1', winner: 'Sunil Lamsal', party: 'RSP' },
+  { name: 'Rupandehi 2', winner: 'Sulabh Kharel', party: 'RSP' },
+  { name: 'Rupandehi 3', winner: 'Lekhjung Thapa', party: 'RSP' },
+  { name: 'Rupandehi 4', winner: 'Kanhaiya Baniya', party: 'RSP' },
+  { name: 'Rupandehi 5', winner: 'Taufiq Ahmed Khan', party: 'RSP' },
+  { name: 'Salyan 1', winner: 'Ramesh Kumar Malla', party: 'Nepali Communist Party' },
+  { name: 'Sankhuwasabha 1', winner: 'Arjun Kumar Karki', party: 'CPN (UML)' },
+  { name: 'Saptari 1', winner: 'Pushpa Kumari Chaudhary', party: 'RSP' },
+  { name: 'Saptari 2', winner: 'Ramjee Yadav', party: 'RSP' },
+  { name: 'Saptari 3', winner: 'Amarkant Chaudhary', party: 'RSP' },
+  { name: 'Saptari 4', winner: 'Sitaram Sah', party: 'RSP' },
+  { name: 'Sarlahi 1', winner: 'Nitima Bhandari', party: 'RSP' },
+  { name: 'Sarlahi 2', winner: 'Rabin Mahato', party: 'RSP' },
+  { name: 'Sarlahi 3', winner: 'Narendra Sah Kalwar', party: 'RSP' },
+  { name: 'Sarlahi 4', winner: 'Amresh Kumar Singh', party: 'RSP' },
+  { name: 'Sindhuli 1', winner: 'Dhanendra Karki', party: 'RSP' },
+  { name: 'Sindhuli 2', winner: 'Aashish Gajurel', party: 'RSP' },
+  { name: 'Sindhupalchok 1', winner: 'Bharat Prasad Parajuli', party: 'RSP' },
+  { name: 'Sindhupalchok 2', winner: 'Yubaraj Dulal', party: 'Nepali Communist Party' },
+  { name: 'Siraha 1', winner: 'Bablu Gupta', party: 'RSP' },
+  { name: 'Siraha 2', winner: 'Shiv Shankar Yadav', party: 'RSP' },
+  { name: 'Siraha 3', winner: 'Shambhu Kumar Yadav', party: 'RSP' },
+  { name: 'Siraha 4', winner: 'Tapeshwar Yadav', party: 'RSP' },
+  { name: 'Solukhumbu 1', winner: 'Prakash Singh Karki', party: 'Nepali Congress' },
+  { name: 'Sunsari 1', winner: 'Harka Sampang', party: 'Shram Sanskriti Party' },
+  { name: 'Sunsari 2', winner: 'Lal Bikram Thapa', party: 'RSP' },
+  { name: 'Sunsari 3', winner: 'Ashok Kumar Chaudhary', party: 'RSP' },
+  { name: 'Sunsari 4', winner: 'Deepak Kumar Sah', party: 'RSP' },
+  { name: 'Surkhet 1', winner: 'Bishnu Bahadur Khadka', party: 'Nepali Congress' },
+  { name: 'Surkhet 2', winner: 'Ramesh Kumar Sapkota', party: 'RSP' },
+  { name: 'Syangja 1', winner: 'Dhananjaya Regmi', party: 'RSP' },
+  { name: 'Syangja 2', winner: 'Jhabilal Dumre', party: 'RSP' },
+  { name: 'Tanahun 1', winner: 'Swarnim Wagle', party: 'RSP' },
+  { name: 'Tanahun 2', winner: 'Shreeram Neupane', party: 'RSP' },
+  { name: 'Taplejung 1', winner: 'Kshitij Thebe', party: 'CPN (UML)' },
+  { name: 'Tehrathum 1', winner: 'Santosh Subba', party: 'Nepali Congress' },
+  { name: 'Udayapur 1', winner: 'Parash Mani Gelal', party: 'RSP' },
+  { name: 'Udayapur 2', winner: 'Surya Bahadur Tamang', party: 'RSP' }
 ];
 
 async function seed() {
   try {
     await sequelize.authenticate();
-    console.log('Connected to database. Seeding...');
+    console.log('Connected to database. Seeding canonical 165 FPTP election results...');
 
-    // Sync to ensure all tables exist
+    // Recreate tables to avoid conflicts
     await sequelize.sync({ force: true });
     console.log('Database synced (tables recreated).');
 
+    // 1. Seed Districts
+    const districtMap = new Map();
     for (const prov of nepalData) {
       for (const distName of prov.districts) {
         const district = await District.create({
@@ -88,109 +221,72 @@ async function seed() {
           daoContact: `+977-0${distName.length}-500000`,
           daoOfficeHours: '10:00 AM - 5:00 PM'
         });
-
-        // Seed some explicit constituencies for specific districts
-        const key = distName.toUpperCase();
-        if (key === 'KATHMANDU') {
-          for (let i = 1; i <= 10; i++) {
-            await Constituency.create({
-              id: `KTM-${i}`,
-              name: `Kathmandu ${i}`,
-              province: prov.province,
-              districtId: district.id
-            });
-          }
-        } else if (key === 'LALITPUR') {
-          for (let i = 1; i <= 3; i++) {
-            await Constituency.create({
-              id: `LPT-${i}`,
-              name: `Lalitpur ${i}`,
-              province: prov.province,
-              districtId: district.id
-            });
-          }
-        } else if (key === 'JHAPA') {
-          for (let i = 1; i <= 5; i++) {
-            await Constituency.create({
-              id: `JHP-${i}`,
-              name: `Jhapa ${i}`,
-              province: prov.province,
-              districtId: district.id
-            });
-          }
-        } else if (key === 'CHITWAN') {
-          for (let i = 1; i <= 3; i++) {
-            await Constituency.create({
-              id: `CTW-${i}`,
-              name: `Chitwan ${i}`,
-              province: prov.province,
-              districtId: district.id
-            });
-          }
-        } else if (key === 'KASKI') {
-          for (let i = 1; i <= 3; i++) {
-            await Constituency.create({
-              id: `KSK-${i}`,
-              name: `Kaski ${i}`,
-              province: prov.province,
-              districtId: district.id
-            });
-          }
-        } else if (key === 'GORKHA') {
-          for (let i = 1; i <= 2; i++) {
-            await Constituency.create({
-              id: `GRK-${i}`,
-              name: `Gorkha ${i}`,
-              province: prov.province,
-              districtId: district.id
-            });
-          }
-        } else if (key === 'GULMI') {
-          await Constituency.create({
-            id: `GLM-1`,
-            name: `Gulmi 1`,
-            province: prov.province,
-            districtId: district.id
-          });
-        } else {
-          // Standard default constituency for other districts
-          const cleanName = distName.toLowerCase().replace(/[^a-z0-9]/g, '');
-          await Constituency.create({
-            id: `${cleanName}-1`,
-            name: `${distName} 1`,
-            province: prov.province,
-            districtId: district.id
-          });
-        }
+        districtMap.set(distName.toUpperCase(), district.id);
       }
     }
+    console.log(`${districtMap.size} districts seeded.`);
 
-    console.log('Districts and Constituencies seeded.');
+    // Helper to resolve district name from constituency name
+    const resolveDistrictName = (constyName) => {
+      const upper = constyName.toUpperCase();
+      if (upper.startsWith('EASTERN RUKUM')) return 'EASTERN RUKUM';
+      if (upper.startsWith('WESTERN RUKUM')) return 'WESTERN RUKUM';
+      if (upper.includes('PARASI')) return 'PARASI';
+      if (upper.startsWith('KAVREPALANCHOK')) return 'KAVREPALANCHOWK';
+      if (upper.startsWith('DHANUSHA')) return 'DHANUSA';
+      if (upper.startsWith('KAPILVASTU')) return 'KAPILVASTU';
+      if (upper.startsWith('TANAHUN')) return 'TANAHU';
+      return constyName.split(' ')[0].toUpperCase();
+    };
 
-    // Seed representatives
-    for (const repData of explicitReps) {
-      // Find if constituency exists
-      const consty = await Constituency.findByPk(repData.constituencyId);
-      if (consty) {
-        const rep = await Representative.create({
-          name: repData.name,
-          party: repData.party,
-          constituencyId: repData.constituencyId,
-          position: repData.position,
-          attendancePercent: repData.attendancePercent,
-          billsSponsored: repData.billsSponsored,
-          contactInfo: repData.contactInfo,
-          photoUrl: `https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&auto=format&fit=crop&q=60`
-        });
+    // 2. Seed Constituencies and Winner Representatives
+    for (const item of canonicalWinners) {
+      const distKey = resolveDistrictName(item.name);
+      const districtId = districtMap.get(distKey);
 
-        // Set as winner representative
-        consty.winnerRepresentativeId = rep.id;
-        await consty.save();
+      if (!districtId) {
+        throw new Error(`District not found for constituency: ${item.name} (Resolved key: ${distKey})`);
       }
+
+      // Find province from district
+      const matchedProv = nepalData.find(p => p.districts.some(d => d.toUpperCase() === distKey || (distKey === 'KAVREPALANCHOWK' && d === 'Kavrepalanchowk') || (distKey === 'DHANUSA' && d === 'Dhanusa') || (distKey === 'TANAHU' && d === 'Tanahu') || (distKey === 'PARASI' && d === 'Parasi')));
+      const province = matchedProv ? matchedProv.province : 'Bagmati Province';
+
+      const slug = item.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+
+      // Create Representative first
+      const rep = await Representative.create({
+        name: item.winner,
+        party: item.party,
+        photoUrl: `https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&auto=format&fit=crop&q=60`,
+        position: 'Member of Parliament',
+        attendancePercent: 85,
+        billsSponsored: 5,
+        contactInfo: `${item.winner.toLowerCase().replace(/[^a-z]/g, '')}@parliament.gov.np`,
+        bio: `Elected as the First-Past-the-Post representative for ${item.name} in the March 2026 General Election.`
+      });
+
+      // Create Constituency linking to the representative
+      const constituency = await Constituency.create({
+        id: slug,
+        name: item.name,
+        province: province,
+        districtId: districtId,
+        winnerRepresentativeId: rep.id,
+        slug: slug,
+        mapIdentifier: distKey,
+        electionYear: 2026,
+        voteCount: 'pending_verification',
+        victoryMargin: 'pending_verification'
+      });
+
+      // Update Representative with constituencyId
+      rep.constituencyId = constituency.id;
+      await rep.save();
     }
 
-    console.log('Representatives seeded.');
-    console.log('Database seeding completed successfully!');
+    console.log(`${canonicalWinners.length} FPTP Constituencies and Representatives seeded.`);
+    console.log('Seeding completed successfully!');
     process.exit(0);
   } catch (error) {
     console.error('Seeding failed:', error);

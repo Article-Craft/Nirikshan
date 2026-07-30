@@ -62,3 +62,18 @@
   border-right-color: rgba(46, 36, 24, 0.95) !important;
 }
 
+.leaflet-bar {
+  border: 1px solid var(--color-dust-beige) !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+}
+.leaflet-bar a {
+  background-color: var(--color-weather-stone) !important;
+  color: var(--color-pagoda-wood) !important;
+  border-bottom: 1px solid var(--color-dust-beige) !important;
+}
+.leaflet-bar a:hover {
+  background-color: var(--color-temple-brass) !important;
+  color: var(--color-pagoda-wood) !important;
+}
+

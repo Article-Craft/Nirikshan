@@ -36,7 +36,14 @@ beforeAll(async () => {
 
   // Seed minimal District/Constituency
   const dist = await District.create({ name: 'Kathmandu', province: 'Bagmati Province' });
-  await Constituency.create({ id: 'KTM-1', name: 'Kathmandu 1', province: 'Bagmati Province', districtId: dist.id });
+  await Constituency.create({
+    id: 'KTM-1',
+    name: 'Kathmandu 1',
+    province: 'Bagmati Province',
+    districtId: dist.id,
+    slug: 'ktm-1',
+    mapIdentifier: 'KATHMANDU'
+  });
 });
 
 afterAll(async () => {

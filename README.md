@@ -142,7 +142,7 @@ We welcome contributions to Nirikshan. Please follow these guidelines:
 
 ## Team
 
-This platform was developed as a final-year academic project by:
+This platform was developed as a Team project by:
 
 * Ashmit
 * Sujit
@@ -157,4 +157,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contact & Acknowledgements
 
 * **Repository:** [https://github.com/devashmit/Nirikshan](https://github.com/devashmit/Nirikshan)
-* Special thanks to our academic supervisors and mentors for their guidance during the development of this project.

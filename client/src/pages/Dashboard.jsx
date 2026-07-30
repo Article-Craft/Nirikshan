@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { promisesAPI } from '../api';
 import PromiseCard from '../components/PromiseCard';
-import { Search, Filter, RefreshCw, PlusCircle } from 'lucide-react';
+import { Search, Filter, RefreshCw, PlusCircle, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BudgetVisualiser from '../components/visualizations/BudgetVisualiser';
 import ComplaintHeatmap from '../components/visualizations/ComplaintHeatmap';
+import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
 
 export default function Dashboard({ user }) {
   const [promises, setPromises] = useState([]);
@@ -12,6 +13,7 @@ export default function Dashboard({ user }) {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const { metrics, loading: metricsLoading } = useDashboardMetrics();
   
   // Filters
   const [search, setSearch] = useState('');
@@ -67,6 +69,60 @@ export default function Dashboard({ user }) {
           Nirikshan (निरीक्षण) provides tools to track official public promises, evaluate progress, 
           and check representative profiles for transparency across Nepal.
         </p>
+      </div>
+
+      {/* Dashboard Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10 font-sans">
+        {/* Total Complaints */}
+        <div className="bg-weather-stone border border-dust-beige p-4 flex flex-col justify-center">
+          <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-basalt/70 mb-1">Total Complaints</span>
+          <span className="text-2xl font-serif font-bold text-pagoda-wood">
+            {metricsLoading ? '...' : metrics.totalComplaints}
+          </span>
+        </div>
+        {/* Open Cases */}
+        <div className="bg-weather-stone border border-dust-beige p-4 flex flex-col justify-center">
+          <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-basalt/70 mb-1">Open Cases</span>
+          <span className="text-2xl font-serif font-bold text-status-delayed">
+            {metricsLoading ? '...' : metrics.openCases}
+          </span>
+        </div>
+        {/* Resolved Cases */}
+        <div className="bg-weather-stone border border-dust-beige p-4 flex flex-col justify-center">
+          <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-basalt/70 mb-1">Resolved Cases</span>
+          <span className="text-2xl font-serif font-bold text-temple-brass">
+            {metricsLoading ? '...' : metrics.resolvedCases}
+          </span>
+        </div>
+        {/* Most Reported District */}
+        <div className="bg-weather-stone border border-dust-beige p-4 flex flex-col justify-center">
+          <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-basalt/70 mb-1">Most Reported</span>
+          <span className="text-lg font-serif font-bold text-pagoda-wood leading-tight">
+            {metricsLoading ? '...' : metrics.mostReportedDistrict}
+          </span>
+        </div>
+        {/* Avg Response Time - Empty State */}
+        <div className="bg-weather-stone border border-dashed border-dust-beige p-4 flex flex-col justify-center relative group">
+          <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-basalt/50 mb-1">Avg Response</span>
+          <div className="flex items-center gap-1.5 text-slate-basalt/40">
+            <span className="text-xl font-serif">—</span>
+            <AlertCircle className="w-3.5 h-3.5" />
+          </div>
+          <div className="absolute inset-0 bg-himalayan-mist/95 p-3 text-[10px] text-slate-basalt/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center text-center">
+            Data currently unavailable from source.
+          </div>
+        </div>
+        {/* Trends - Empty State */}
+        <div className="bg-weather-stone border border-dashed border-dust-beige p-4 flex flex-col justify-center relative group">
+          <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-basalt/50 mb-1">Monthly Trend</span>
+          <div className="flex items-center gap-1.5 text-slate-basalt/40">
+            <span className="text-xl font-serif">—</span>
+            <AlertCircle className="w-3.5 h-3.5" />
+          </div>
+          <div className="absolute inset-0 bg-himalayan-mist/95 p-3 text-[10px] text-slate-basalt/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center text-center">
+            Insufficient historical data for trends.
+          </div>
+        </div>
       </div>
 
       {/* Analytics Visualizations */}

@@ -272,6 +272,9 @@ export default function ComplaintHeatmap() {
   const [complainStatus, setComplainStatus] = useState('verified');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [district, setDistrict] = useState('all');
+  const [municipality, setMunicipality] = useState('all');
+  const [severity, setSeverity] = useState('all');
   const [showModal, setShowModal] = useState(false);
 
   // Build filters object that's passed to the hook
@@ -280,7 +283,10 @@ export default function ComplaintHeatmap() {
     ...(complainStatus !== 'all' ? { status: complainStatus } : { status: 'all' }),
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
+    ...(district !== 'all' ? { district } : {})
   };
+
+  const isDataUnavailable = municipality !== 'all' || severity !== 'all';
 
   const { data, loading, error } = useComplaintData(filters);
   const totalComplaints = data.reduce((sum, item) => sum + item.density, 0);
@@ -376,15 +382,67 @@ export default function ComplaintHeatmap() {
               onChange={e => setEndDate(e.target.value)}
               className="bg-weather-stone border border-dust-beige text-slate-basalt focus:border-temple-brass focus:ring-1 focus:ring-temple-brass outline-none py-1.5 px-2 text-xs rounded-sm"
             />
-            {(startDate || endDate || serviceType !== 'all' || complainStatus !== 'verified') && (
+          </div>
+          
+          {/* Extended Filters */}
+          <div className="flex items-center gap-2 text-xs">
+            <label className="font-semibold uppercase tracking-wider text-slate-basalt/70 whitespace-nowrap">Dist:</label>
+            <div className="relative">
+              <select
+                value={district}
+                onChange={e => setDistrict(e.target.value)}
+                className="appearance-none w-24 bg-weather-stone text-pagoda-wood border border-dust-beige focus:border-temple-brass focus:ring-1 focus:ring-temple-brass outline-none py-1.5 pl-2.5 pr-7 text-xs font-semibold rounded-sm shadow-inner transition-colors cursor-pointer text-ellipsis"
+              >
+                <option value="all">All</option>
+                <option value="Kathmandu">Kathmandu</option>
+                <option value="Lalitpur">Lalitpur</option>
+                <option value="Bhaktapur">Bhaktapur</option>
+                <option value="Pokhara">Pokhara</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 w-3.5 h-3.5 text-pagoda-wood" />
+            </div>
+
+            <label className="font-semibold uppercase tracking-wider text-slate-basalt/70 whitespace-nowrap">Muni:</label>
+            <div className="relative">
+              <select
+                value={municipality}
+                onChange={e => setMunicipality(e.target.value)}
+                className="appearance-none w-24 bg-weather-stone text-pagoda-wood border border-dust-beige focus:border-temple-brass focus:ring-1 focus:ring-temple-brass outline-none py-1.5 pl-2.5 pr-7 text-xs font-semibold rounded-sm shadow-inner transition-colors cursor-pointer text-ellipsis"
+              >
+                <option value="all">All</option>
+                <option value="KMC">KMC</option>
+                <option value="LMC">LMC</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 w-3.5 h-3.5 text-pagoda-wood" />
+            </div>
+
+            <label className="font-semibold uppercase tracking-wider text-slate-basalt/70 whitespace-nowrap">Severity:</label>
+            <div className="relative">
+              <select
+                value={severity}
+                onChange={e => setSeverity(e.target.value)}
+                className="appearance-none w-24 bg-weather-stone text-pagoda-wood border border-dust-beige focus:border-temple-brass focus:ring-1 focus:ring-temple-brass outline-none py-1.5 pl-2.5 pr-7 text-xs font-semibold rounded-sm shadow-inner transition-colors cursor-pointer text-ellipsis"
+              >
+                <option value="all">All</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 w-3.5 h-3.5 text-pagoda-wood" />
+            </div>
+
+            {(startDate || endDate || serviceType !== 'all' || complainStatus !== 'verified' || district !== 'all' || municipality !== 'all' || severity !== 'all') && (
               <button
                 onClick={() => {
                   setServiceType('all');
                   setComplainStatus('verified');
                   setStartDate('');
                   setEndDate('');
+                  setDistrict('all');
+                  setMunicipality('all');
+                  setSeverity('all');
                 }}
-                className="text-slate-basalt/50 hover:text-status-broken transition-colors"
+                className="text-slate-basalt/50 hover:text-status-broken transition-colors ml-2"
                 title="Clear filters"
               >
                 <X className="w-3.5 h-3.5" />
@@ -394,7 +452,12 @@ export default function ComplaintHeatmap() {
         </div>
 
         {/* ── Body States ── */}
-        {error ? (
+        {isDataUnavailable ? (
+          <div className="h-64 flex flex-col items-center justify-center border border-dashed border-dust-beige text-slate-basalt/60 font-serif text-sm gap-3 p-4 text-center">
+            <AlertTriangle className="w-6 h-6 opacity-50" />
+            <p>Granular data for the selected Municipality or Severity level is not yet available in the public database.</p>
+          </div>
+        ) : error ? (
           <div className="h-64 flex flex-col items-center justify-center border border-dashed border-dust-beige text-status-broken font-serif text-sm gap-3">
             <AlertTriangle className="w-6 h-6" />
             <p>{error}</p>

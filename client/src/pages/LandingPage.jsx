@@ -68,7 +68,7 @@ export default function LandingPage({ setUser }) {
               <Landmark className="w-4 h-4 text-temple-brass" /> Official Civic Watchdog Portal
             </div>
             <div className="flex items-center gap-4 flex-wrap">
-              <img src="/logo.png" alt="Nirikshan Logo" className="w-16 h-16 object-contain" />
+              <img src="/logo.png" alt="Nirikshan Logo" className="w-16 h-16 object-contain rounded-full p-1.5 bg-white border-2 border-dust-beige shadow-md" />
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-pagoda-wood leading-none tracking-tight">
                 NIRIKSHAN <span className="font-sans font-light text-2xl lg:text-3xl text-temple-brass block sm:inline sm:ml-3">निरीक्षण</span>
               </h1>

@@ -442,7 +442,7 @@ export default function ComplaintHeatmap() {
                   setMunicipality('all');
                   setSeverity('all');
                 }}
-                className="text-slate-basalt/50 hover:text-status-broken transition-colors ml-2"
+                className="text-slate-basalt/50 hover:text-status-broken transition-colors p-1"
                 title="Clear filters"
               >
                 <X className="w-3.5 h-3.5" />
@@ -490,7 +490,7 @@ export default function ComplaintHeatmap() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
               {data.map((item, index) => {
                 const normalizedDensity = normalizeForColor(item.density);
                 const bg = getDensityColor(normalizedDensity);
@@ -504,20 +504,25 @@ export default function ComplaintHeatmap() {
                 return (
                   <div
                     key={item.region}
-                    className={`relative p-4 rounded-sm flex flex-col justify-between transition-transform hover:scale-[1.02] shadow-sm cursor-default ${spanClass}`}
+                    className={`relative p-5 rounded-sm transition-transform hover:scale-[1.02] shadow-sm cursor-default ${spanClass}`}
                     style={{
                       backgroundColor: bg,
                       color: textColor,
                       border: `1px solid ${borderColor}`,
-                      minHeight: '100px'
+                      minHeight: '160px'
                     }}
                   >
-                    <span className="font-serif font-bold text-lg leading-tight z-10">{item.region}</span>
-                    <div className="flex justify-between items-end mt-4 z-10">
-                      <span className="text-[10px] uppercase tracking-widest font-semibold opacity-80">Complaints</span>
-                      <span className="font-bold text-xl">
-                        {item.density === 0 ? '—' : item.density}
-                      </span>
+                    <div className="flex flex-col justify-between h-full relative z-10">
+                      <h3 className="font-serif font-bold text-base md:text-lg leading-snug truncate" title={item.region}>
+                        {item.region}
+                      </h3>
+                      
+                      <div className="flex justify-between items-end">
+                        <span className="text-[10px] uppercase tracking-widest font-semibold opacity-80">Complaints</span>
+                        <span className="font-bold text-3xl sm:text-4xl leading-none">
+                          {item.density === 0 ? '—' : item.density}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Subtle texture overlay for premium feel */}

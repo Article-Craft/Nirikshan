@@ -39,6 +39,8 @@ export default function LandingPage({ setUser }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailReadOnly, setEmailReadOnly] = useState(true);
+  const [passwordReadOnly, setPasswordReadOnly] = useState(true);
 
   // Map and Data states
   const [geoJsonData, setGeoJsonData] = useState(null);
@@ -61,6 +63,7 @@ export default function LandingPage({ setUser }) {
 
   // Fetch data
   useEffect(() => {
+    window.scrollTo(0, 0);
     Promise.all([
       fetch('/data/nepal-districts.json').then((res) => {
         if (!res.ok) throw new Error('Failed to fetch map data');
@@ -654,22 +657,6 @@ export default function LandingPage({ setUser }) {
               <p className="text-sm text-slate-basalt/80 leading-relaxed">
                 As a registered citizen, you can upload evidence files for promises, report local service delivery failures, and monitor audit feedback from district secretariats.
               </p>
-              
-              {/* Demo Accounts Panel */}
-              <div className="bg-slate-50 p-6 border border-slate-200 rounded space-y-4 text-left">
-                <div className="text-xs uppercase tracking-widest font-bold text-slate-500">Quick-Fill Audit Roles (For Testing)</div>
-                <div className="flex flex-wrap gap-2.5">
-                  <button onClick={() => handleQuickFill('citizen')} className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold rounded shadow-sm transition-colors flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-blue-600" /> Citizen Auditor
-                  </button>
-                  <button onClick={() => handleQuickFill('moderator')} className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold rounded shadow-sm transition-colors flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-amber-600" /> Secretariat Moderator
-                  </button>
-                  <button onClick={() => handleQuickFill('admin')} className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold rounded shadow-sm transition-colors flex items-center gap-1.5">
-                    <Landmark className="w-3.5 h-3.5 text-nepal-red" /> Chief Administrator
-                  </button>
-                </div>
-              </div>
             </div>
 
             {/* Auth Card */}
@@ -686,14 +673,14 @@ export default function LandingPage({ setUser }) {
                   <div className="flex bg-slate-100 p-1 rounded mb-6 border border-slate-200">
                     <button
                       type="button"
-                      onClick={() => { setActiveTab('login'); setError(''); }}
+                      onClick={() => { setActiveTab('login'); setError(''); setEmail(''); setPassword(''); setEmailReadOnly(true); setPasswordReadOnly(true); }}
                       className={`flex-1 py-2 text-xs uppercase tracking-wider font-bold transition-all rounded ${activeTab === 'login' ? 'bg-white text-pagoda-wood shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
                     >
                       Sign In
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setActiveTab('signup'); setError(''); }}
+                      onClick={() => { setActiveTab('signup'); setError(''); setEmail(''); setPassword(''); setEmailReadOnly(true); setPasswordReadOnly(true); }}
                       className={`flex-1 py-2 text-xs uppercase tracking-wider font-bold transition-all rounded ${activeTab === 'signup' ? 'bg-white text-pagoda-wood shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
                     >
                       Register
@@ -715,7 +702,7 @@ export default function LandingPage({ setUser }) {
                           required
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          placeholder="Shri Ashmit Giri"
+                          placeholder=""
                           className="w-full bg-slate-50 border border-slate-200 py-2.5 px-3 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
                         />
                       </div>
@@ -727,7 +714,10 @@ export default function LandingPage({ setUser }) {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="auditor@nirikshan.gov.np"
+                        placeholder=""
+                        autoComplete="off"
+                        readOnly={emailReadOnly}
+                        onFocus={() => setEmailReadOnly(false)}
                         className="w-full bg-slate-50 border border-slate-200 py-2.5 px-3 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
                       />
                     </div>
@@ -738,7 +728,10 @@ export default function LandingPage({ setUser }) {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder=""
+                        autoComplete="new-password"
+                        readOnly={passwordReadOnly}
+                        onFocus={() => setPasswordReadOnly(false)}
                         className="w-full bg-slate-50 border border-slate-200 py-2.5 px-3 text-xs font-semibold rounded focus:outline-none focus:ring-1 focus:ring-nepal-red focus:border-nepal-red"
                       />
                     </div>
@@ -748,7 +741,7 @@ export default function LandingPage({ setUser }) {
                       disabled={loading}
                       className="w-full py-3 bg-pagoda-wood hover:bg-nepal-red text-white text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
                     >
-                      {loading ? 'Authenticating...' : activeTab === 'login' ? 'Access Secretariat' : 'Register Account'}
+                      {loading ? 'Authenticating...' : activeTab === 'login' ? 'Sign In' : 'Register Account'}
                     </button>
                   </form>
                 </div>

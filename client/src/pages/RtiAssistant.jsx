@@ -692,7 +692,14 @@ export default function RtiAssistant() {
                   return (
                     <div
                       key={req.id}
-                      onClick={() => setSelectedRequest(req)}
+                      onClick={() => {
+                        setSelectedRequest(req);
+                        if (window.innerWidth < 1024) {
+                          setTimeout(() => {
+                            document.getElementById('rti-details-panel')?.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
+                        }
+                      }}
                       className={`p-4 border rounded-sm transition-all duration-200 cursor-pointer ${
                         isSelected 
                           ? 'bg-weather-stone border-temple-brass shadow-sm ring-1 ring-temple-brass/30' 
@@ -740,7 +747,7 @@ export default function RtiAssistant() {
           </div>
 
           {/* Detailed Request Audit Column */}
-          <div className="lg:col-span-7">
+          <div id="rti-details-panel" className="lg:col-span-7 scroll-mt-6">
             {selectedRequest ? (
               <div className="bg-weather-stone/20 border border-dust-beige p-6 rounded-sm shadow-md space-y-6">
                 

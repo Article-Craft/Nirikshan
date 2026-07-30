@@ -128,10 +128,11 @@ export default function InteractiveMap() {
   useEffect(() => {
     if (!mapRef.current || loading) return;
 
+    const isMobile = window.innerWidth < 768;
     leafletMapInstance.current = L.map(mapRef.current, {
-      center: [28.3949, 84.1240], // Center of Nepal
-      zoom: 7,
-      minZoom: 6,
+      center: isMobile ? [28.2, 84.1] : [28.3949, 84.1240], // Center of Nepal
+      zoom: isMobile ? 6 : 7,
+      minZoom: 5.5,
       maxZoom: 10,
       zoomControl: false,
       attributionControl: false,
@@ -281,6 +282,13 @@ export default function InteractiveMap() {
             animate: true,
             duration: 0.6
           });
+
+          // Mobile enhancement: smooth scroll to details panel
+          if (window.innerWidth < 1024) {
+            setTimeout(() => {
+              document.getElementById('details-panel')?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }
         },
       });
     };
@@ -396,6 +404,13 @@ export default function InteractiveMap() {
         }
       }
     }
+
+    // Mobile enhancement: smooth scroll to details panel
+    if (window.innerWidth < 1024) {
+      setTimeout(() => {
+        document.getElementById('details-panel')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
   };
 
   const handleSearchSubmit = (e) => {
@@ -487,8 +502,8 @@ export default function InteractiveMap() {
         
         {/* Map View */}
         <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded text-xs font-bold uppercase tracking-wider text-slate-600">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 border border-slate-200 p-3.5 rounded gap-3 text-xs font-bold uppercase tracking-wider text-slate-600">
+            <div className="flex flex-wrap items-center gap-2.5">
               <span className="text-[10px] text-slate-400">Map Filter:</span>
               <div className="bg-slate-200 p-0.5 rounded flex relative shadow-inner">
                 <button
@@ -520,7 +535,7 @@ export default function InteractiveMap() {
             </div>
           </div>
 
-          <div className="relative h-[480px] w-full border border-slate-200 bg-[#FFFFFF] overflow-hidden rounded">
+          <div className="relative h-[320px] sm:h-[480px] w-full border border-slate-200 bg-[#FFFFFF] overflow-hidden rounded">
             <div ref={mapRef} className="h-full w-full z-10" />
             
             {mapMode === 'constituency' && (
@@ -540,8 +555,8 @@ export default function InteractiveMap() {
         </div>
 
         {/* Side Panel District Mini-Portal Dashboard */}
-        <div className="flex flex-col">
-          <div className="flex-grow bg-himalayan-mist border-2 border-dust-beige p-6 relative rounded-sm shadow-md flex flex-col justify-between overflow-hidden">
+        <div id="details-panel" className="flex flex-col scroll-mt-6">
+          <div className="flex-grow bg-himalayan-mist border-2 border-dust-beige p-6 relative rounded-sm shadow-md flex flex-col justify-between overflow-hidden lg:overflow-y-auto lg:max-h-[544px] text-left">
             <div className="absolute top-2 left-2 right-2 bottom-2 border border-dust-beige/40 pointer-events-none" />
             <div className="absolute top-1 left-1 right-1 bottom-1 border border-dashed border-dust-beige/25 pointer-events-none" />
 

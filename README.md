@@ -1,9 +1,9 @@
 # Nirikshan (निरीक्षण)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![React](https://img.shields.io/badge/Frontend-React-blue.svg)](https://react.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-38bdf8.svg)](https://tailwindcss.com/)
-[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-336791.svg)](https://www.postgresql.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2E2418)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/Frontend-React-9C7A3C)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-2E2418)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-9C7A3C)](https://www.postgresql.org/)
 
 > **Track. Understand. Act.**
 
@@ -20,28 +20,42 @@ Nirikshan (निरीक्षण) is a citizen-centric government watchdog pl
 * **Grievance Heatmap:** Report municipal and public service issues anonymously on a visual heatmap.
 * **Representative Report Cards:** Review profiles, contact information, and performance ratings of elected officials.
 * **RTI Request Generator:** Generate formatted Right to Information (RTI) application templates.
-* **Interactive Map of Nepal:** Explore constituency winners and view contact details for district Chief District Officers (CDOs).
+* **Interactive Map of Nepal:** Explore constituency winners and view contact details for district Chief District Officers (CDOs). Note that this map reflects the real 2026 Nepal general election results (165 FPTP constituencies, sourced from the Election Commission of Nepal) rather than placeholder or mockup data.
 
 ## Tech Stack
 
 | Layer | Technology |
 | --- | --- |
 | **Frontend** | React, Tailwind CSS, Leaflet/Mapbox |
-| **Backend** | Node.js (Express) or Django |
-| **Database** | PostgreSQL with PostGIS extension |
+| **Backend** | Node.js (Express) |
+| **Database** | PostgreSQL with PostGIS extension (SQLite fallback for local/testing) |
 | **Authentication** | JWT (JSON Web Tokens) with Anonymous Mode |
-| **File Storage** | AWS S3 or Firebase Storage |
+| **File Storage** | Local Disk Storage (with optional AWS S3 integration) |
 | **Hosting** | Vercel (Frontend), Render (Backend) |
 
 ## Screenshots
 
-*Placeholders for application interface screenshots:*
+### Promise Tracker Dashboard
+![Promise Tracker Dashboard](client/public/screenshots/promise_tracker_dashboard.png)
 
-```
-[ Dashboard Mockup / Landing Page ]
-[ Interactive Constituency Map ]
-[ Grievance Heatmap UI ]
-```
+### Interactive Map (Constituency & CDO Modes)
+#### Constituency Winners Mode
+![Constituency Winners Mode](client/public/screenshots/interactive_map_constituency.png)
+
+#### District CDO Contact Mode
+![District CDO Contact Mode](client/public/screenshots/interactive_map_cdo.png)
+
+### Representative Report Card
+![Representative Report Card](client/public/screenshots/representative_report_card.png)
+
+### Budget Visualiser
+![Budget Visualiser](client/public/screenshots/budget_visualiser.png)
+
+### Complaint Heatmap
+![Complaint Heatmap](client/public/screenshots/complaint_heatmap.png)
+
+### RTI Assistant
+![RTI Assistant](client/public/screenshots/rti_assistant.png)
 
 ## Installation & Setup
 
@@ -140,15 +154,38 @@ We welcome contributions to Nirikshan. Please follow these guidelines:
    * Provide a clear description of the changes made and reference any related issues.
    * Ensure code builds locally before submitting.
 
+## Testing & Continuous Integration
+
+### Local Testing
+The backend API server includes an integration test suite to verify route behavior, database constraints, and user authentication scopes.
+
+To run the tests locally:
+```bash
+cd server
+npm test
+```
+
+### Test Coverage
+The suite (`server/tests/routes.test.js`) runs on an in-memory SQLite database and covers:
+* **Complaints API**: Anonymous submissions, validation of fields (such as coordinates, ward, and service type), and public feed visibility logic (ensuring pending complaints do not display).
+* **Representatives API**: Verification of endpoint initialization, CRUD actions requiring administrator authorization, and client-side rating/review submissions.
+
+### Continuous Integration
+Continuous Integration is configured via GitHub Actions (`.github/workflows/ci.yml`). On every push or pull request to any branch, the workflow automatically:
+1. Provisions an `ubuntu-latest` environment.
+2. Spawns a matrix of Node.js environments (`18.x` and `20.x`).
+3. Installs backend dependencies.
+4. Executes the test suite to ensure no regressions are merged.
+
 ## Team
 
 This platform was developed as a Team project by:
 
-* Ashmit
-* Sujit
-* Samir
-* Nischal
-* Pritam
+* **Ashmit** — Promise Tracker & System Architecture
+* **Sujit** — Representative Report Cards
+* **Samir** — Interactive Map (Constituency & CDO details)
+* **Nischal** — Budget Visualiser & Complaint Heatmap
+* **Pritam** — RTI Assistant & Civic Map
 
 ## License
 

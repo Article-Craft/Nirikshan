@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pagoda-wood: #2E2418;
+  --color-terraced-pine: #2C3B2A;
+  --color-temple-brass: #9C7A3C;
+  --color-himalayan-mist: #F3EFE4;
+  --color-weather-stone: #E4DCC8;
+  --color-weathered-stone: #E4DCC8;
+  --color-slate-basalt: #453F36;
+  --color-dust-beige: #CFC4A8;
+  
+  --color-status-fulfilled: #4F6B45;
+  --color-status-delayed: #8C6A32;
+  --color-status-broken: #6E4438;
+  
+  --color-turmeric-clay: #8C6A32;
+  --color-charred-brick: #6E4438;
+}
+
+@layer base {
+  body {
+    @apply bg-himalayan-mist text-slate-basalt font-sans min-h-screen;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif text-pagoda-wood font-semibold;
+  }
+}
+
+@layer utilities {
+  .animate-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(to right, var(--color-weathered-stone) 4%, var(--color-himalayan-mist) 25%, var(--color-weathered-stone) 36%);
+    background-size: 1000px 100%;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+}

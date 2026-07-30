@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import PromiseDetail from './pages/PromiseDetail';
 import ModeratorDashboard from './pages/ModeratorDashboard';
@@ -26,21 +26,13 @@ export default function App() {
       const token = localStorage.getItem('nirikshan_token');
       
       if (savedUser && token) {
-        setUser(JSON.parse(savedUser));
-        setLoading(false);
-      } else {
-        // Automatically start an anonymous guest session if no user is logged in
-        try {
-          const session = await authAPI.anonymousSession();
-          localStorage.setItem('nirikshan_token', session.token);
-          localStorage.setItem('nirikshan_user', JSON.stringify(session.user));
-          setUser(session.user);
-        } catch (err) {
-          console.error('Failed to init anonymous session:', err);
-        } finally {
-          setLoading(false);
+        const parsedUser = JSON.parse(savedUser);
+        // Only set user if they are not anonymous/guest
+        if (parsedUser && !parsedUser.isAnonymous) {
+          setUser(parsedUser);
         }
       }
+      setLoading(false);
     };
     initSession();
 
@@ -60,33 +52,6 @@ export default function App() {
     window.location.reload();
   };
 
-  const handleDemoSignIn = async (role) => {
-    setLoading(true);
-    try {
-      // Create a dummy user register/login sequence for demonstration purposes
-      const email = `demo_${role}@nirikshan.gov.np`;
-      const name = `${role.toUpperCase()} User`;
-      const password = 'password123';
-
-      let response;
-      try {
-        response = await authAPI.register({ name, email, password, role });
-      } catch (err) {
-        // If already exists, login
-        response = await authAPI.login({ email, password });
-      }
-
-      localStorage.setItem('nirikshan_token', response.token);
-      localStorage.setItem('nirikshan_user', JSON.stringify(response.user));
-      setUser(response.user);
-    } catch (err) {
-      console.error(err);
-      alert('Demo sign in failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const isPreloading = loading || showPreloader;
 
   return (
@@ -96,7 +61,7 @@ export default function App() {
           <div className="flex flex-col items-center space-y-6">
             <img src="/logo.png" alt="Nirikshan Logo" className="w-24 h-24 object-contain rounded-full p-2 bg-white border-2 border-temple-brass shadow-xl animate-pulse" />
             <h1 className="text-3xl font-serif tracking-wider font-extrabold text-himalayan-mist text-center">
-              NIRIKSHAN <span className="font-sans font-light text-lg tracking-widest text-temple-brass block text-center mt-2">निरीक्षण</span>
+               NIRIKSHAN <span className="font-sans font-light text-lg tracking-widest text-temple-brass block text-center mt-2">निरीक्षण</span>
             </h1>
             <p className="text-himalayan-mist/60 text-xs tracking-widest uppercase text-center">Citizen Government Watchdog</p>
           </div>
@@ -115,27 +80,31 @@ export default function App() {
               </Link>
 
               <nav className="flex items-center gap-6">
-                <Link to="/promises" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  Promises Feed
-                </Link>
+                {user && !user.isAnonymous && (
+                  <>
+                    <Link to="/promises" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                      Promises Feed
+                    </Link>
 
-                <Link to="/map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  Interactive Map
-                </Link>
+                    <Link to="/map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                      Interactive Map
+                    </Link>
 
-                <Link to="/directory" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  Representatives Directory
-                </Link>
+                    <Link to="/directory" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                      Representatives Directory
+                    </Link>
 
-                <Link to="/rti" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  RTI Assistant
-                </Link>
+                    <Link to="/rti" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                      RTI Assistant
+                    </Link>
 
-                <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
-                  Civic Map
-                </Link>
+                    <Link to="/civic-map" className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors">
+                      Civic Map
+                    </Link>
+                  </>
+                )}
                 
-                {user && (user.role === 'moderator' || user.role === 'admin') && (
+                {user && !user.isAnonymous && (user.role === 'moderator' || user.role === 'admin') && (
                   <Link
                     to="/moderation"
                     className="text-xs uppercase tracking-wider font-semibold hover:text-temple-brass transition-colors flex items-center gap-1 text-temple-brass"
@@ -145,7 +114,7 @@ export default function App() {
                   </Link>
                 )}
 
-                {user ? (
+                {user && !user.isAnonymous ? (
                   <div className="flex items-center gap-3 border-l border-dust-beige/30 pl-6">
                     <span className="text-xs text-slate-basalt bg-weather-stone px-2.5 py-1 font-semibold flex items-center gap-1">
                       <UserCheck className="w-3.5 h-3.5 text-temple-brass" />
@@ -168,15 +137,15 @@ export default function App() {
           <main className="flex-grow">
             <Routes>
               <Route path="/" element={<LandingPage setUser={setUser} />} />
-              <Route path="/promises" element={<Dashboard user={user} />} />
-              <Route path="/map" element={<InteractiveMap />} />
-              <Route path="/directory" element={<RepresentativeDirectory />} />
-              <Route path="/rti" element={<RtiAssistant />} />
-              <Route path="/civic-map" element={<CivicMap />} />
-              <Route path="/promises/:id" element={<PromiseDetail user={user} />} />
-              <Route path="/promises/new" element={<CreatePromise />} />
-              <Route path="/moderation" element={<ModeratorDashboard />} />
-              <Route path="/representative/:id" element={<RepresentativeReportCard />} />
+              <Route path="/promises" element={user && !user.isAnonymous ? <Dashboard user={user} /> : <Navigate to="/" replace />} />
+              <Route path="/map" element={user && !user.isAnonymous ? <InteractiveMap /> : <Navigate to="/" replace />} />
+              <Route path="/directory" element={user && !user.isAnonymous ? <RepresentativeDirectory /> : <Navigate to="/" replace />} />
+              <Route path="/rti" element={user && !user.isAnonymous ? <RtiAssistant /> : <Navigate to="/" replace />} />
+              <Route path="/civic-map" element={user && !user.isAnonymous ? <CivicMap /> : <Navigate to="/" replace />} />
+              <Route path="/promises/:id" element={user && !user.isAnonymous ? <PromiseDetail user={user} /> : <Navigate to="/" replace />} />
+              <Route path="/promises/new" element={user && !user.isAnonymous ? <CreatePromise /> : <Navigate to="/" replace />} />
+              <Route path="/moderation" element={user && !user.isAnonymous ? <ModeratorDashboard /> : <Navigate to="/" replace />} />
+              <Route path="/representative/:id" element={user && !user.isAnonymous ? <RepresentativeReportCard /> : <Navigate to="/" replace />} />
             </Routes>
           </main>
 

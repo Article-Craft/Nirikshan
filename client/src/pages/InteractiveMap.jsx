@@ -27,6 +27,7 @@ const normalizeName = (name) => {
 
 export default function InteractiveMap() {
   const [mapMode, setMapMode] = useState('district'); // 'district' or 'constituency'
+  const [activeDashboardTab, setActiveDashboardTab] = useState('cdo'); // 'cdo', 'demographics', 'reports'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('Kathmandu');
   const [selectedConstituencyId, setSelectedConstituencyId] = useState(null);
@@ -76,6 +77,8 @@ export default function InteractiveMap() {
         (c) => c.mapIdentifier === district.name.toUpperCase()
       );
 
+      const hasCdo = district.cdoName && district.cdoName.trim() !== "";
+
       map.set(district.name.toUpperCase(), {
         id: district.id,
         name: district.name,
@@ -83,14 +86,18 @@ export default function InteractiveMap() {
         headquarters: district.headquarters,
         areaSqKm: district.areaSqKm,
         population: district.population,
+        publicNotices: district.publicNotices ? JSON.parse(district.publicNotices) : [],
+        citizenReports: district.citizenReports ? JSON.parse(district.citizenReports) : [],
         cdo: {
-          name: district.cdoName,
-          assistant: district.assistantCdo,
-          phone: district.daoContact,
-          email: district.daoEmail,
-          website: district.daoWebsite,
-          office: district.daoAddress || 'HQ & Address Pending',
-          hours: district.daoOfficeHours || '10:00 AM - 5:00 PM'
+          name: hasCdo ? district.cdoName : 'Data Unavailable',
+          assistant: hasCdo ? (district.assistantCdo || 'Data Unavailable') : 'Data Unavailable',
+          phone: hasCdo ? (district.daoContact || 'Data Unavailable') : 'Data Unavailable',
+          email: hasCdo ? (district.daoEmail || `cdo.${district.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@moha.gov.np`) : 'Data Unavailable',
+          website: hasCdo ? (district.daoWebsite || 'Data Unavailable') : 'Data Unavailable',
+          office: hasCdo ? (district.daoAddress || 'Data Unavailable') : 'Data Unavailable',
+          officeHours: hasCdo ? (district.daoOfficeHours || 'Data Unavailable') : 'Data Unavailable',
+          isVerified: hasCdo,
+          cdoPhoto: hasCdo ? 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=60' : null
         },
         municipalitiesCount: district.municipalitiesCount,
         ruralMunicipalitiesCount: district.ruralMunicipalitiesCount,
@@ -128,6 +135,7 @@ export default function InteractiveMap() {
       maxZoom: 10,
       zoomControl: false,
       attributionControl: false,
+      preferCanvas: true
     });
 
     const map = leafletMapInstance.current;
@@ -200,23 +208,41 @@ export default function InteractiveMap() {
       const norm = normalizeName(distName);
       const matchedRecord = getDistrictDataLocal(formattedName);
 
-      let tooltipContent = `<div class="p-2 font-sans text-xs">`;
-      tooltipContent += `<div class="font-extrabold text-pagoda-wood text-sm">${formattedName} District</div>`;
-      tooltipContent += `<div class="text-slate-basalt mt-1">Province: ${matchedRecord?.province || 'Unavailable'}</div>`;
-      
+      const popVal = matchedRecord && matchedRecord.population ? Number(matchedRecord.population).toLocaleString() : 'Data Unavailable';
+      const muniVal = matchedRecord && matchedRecord.municipalitiesCount ? matchedRecord.municipalitiesCount : 'Data Unavailable';
+      const province = matchedRecord?.province || feature.properties.PROVINCE || 'Unavailable';
+
+      let tooltipContent = `
+        <div class="p-2 font-sans bg-slate-900 text-white rounded-md shadow-lg border border-slate-700 min-w-[160px]">
+          <div class="font-bold text-xs border-b border-slate-700 pb-1 mb-1.5 text-amber-400 uppercase tracking-wider">${formattedName} District</div>
+          <div class="text-[10px] text-slate-300 mb-0.5">Province: <span class="font-semibold text-slate-100">${province}</span></div>
+          <div class="text-[10px] text-slate-300 mb-0.5">Population: <span class="font-semibold text-slate-100">${popVal}</span></div>
+          <div class="text-[10px] text-slate-300 mb-0.5">Municipalities: <span class="font-semibold text-slate-100">${muniVal}</span></div>
+      `;
+
       if (mapMode === 'district') {
-        if (matchedRecord?.cdo?.name) {
-          tooltipContent += `<div class="mt-1 border-t border-slate-200 pt-1 text-slate-basalt"><span class="font-semibold text-nepal-red">CDO:</span> ${matchedRecord.cdo.name}</div>`;
+        if (matchedRecord?.cdo?.isVerified) {
+          tooltipContent += `
+            <div class="mt-1.5 pt-1.5 border-t border-slate-700 text-[10px] text-amber-300">
+              CDO: <span class="font-semibold text-slate-100">${matchedRecord.cdo.name}</span>
+            </div>
+          `;
         } else {
-          tooltipContent += `<div class="mt-1 border-t border-slate-200 pt-1 text-amber-700 italic">CDO verification pending</div>`;
+          tooltipContent += `
+            <div class="mt-1.5 pt-1.5 border-t border-slate-700 text-[10px] text-amber-500 italic">
+              CDO verification pending
+            </div>
+          `;
         }
       } else {
-        const matched = constituenciesList.filter(c => c.mapIdentifier === norm);
-        if (matched.length > 0) {
-          const winner = matched[0]?.winnerRepresentative;
+        const districtConstituencies = constituenciesList.filter(c => c.districtId === (matchedRecord?.id));
+        if (districtConstituencies.length > 0) {
+          const primary = districtConstituencies[0];
+          const winner = representativesList.find(r => r.constituencyId === primary.id);
+          const partyInfo = PARTIES[winner?.party || 'IND'];
           tooltipContent += `
-            <div class="mt-1 border-t border-slate-200 pt-1 text-slate-basalt">
-              Representative: ${winner ? winner.name : 'Vacant'} (${winner?.party || 'IND'})
+            <div class="mt-1.5 pt-1.5 border-t border-slate-700 text-[10px] text-amber-300">
+              Rep: <span class="font-semibold text-slate-100">${winner ? winner.name : 'Unknown'} (${partyInfo?.short || winner?.party || 'IND'})</span>
             </div>
           `;
         }
@@ -234,8 +260,9 @@ export default function InteractiveMap() {
           const l = e.target;
           l.setStyle({
             weight: 2.5,
-            color: '#DC2626',
-            fillOpacity: 0.95,
+            color: '#B5944B',
+            fillColor: '#D3C294',
+            fillOpacity: 0.85,
           });
           l.bringToFront();
           setHoveredFeatureName(formattedName);
@@ -514,120 +541,248 @@ export default function InteractiveMap() {
 
         {/* Side Panel District Mini-Portal Dashboard */}
         <div className="flex flex-col">
-          <div className="flex-grow bg-[#FFFFFF] border border-slate-200 p-6 relative rounded shadow-sm flex flex-col justify-between overflow-y-auto max-h-[544px] text-left">
-            <div className="relative z-10 space-y-6">
-              
-              <div className="text-center border-b border-slate-100 pb-4 mb-4">
-                <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 border border-slate-200 mb-2">
-                  <Landmark className="w-4 h-4 text-nepal-red" />
-                </span>
-                <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-extrabold">
+          <div className="flex-grow bg-himalayan-mist border-2 border-dust-beige p-6 relative rounded-sm shadow-md flex flex-col justify-between overflow-hidden">
+            <div className="absolute top-2 left-2 right-2 bottom-2 border border-dust-beige/40 pointer-events-none" />
+            <div className="absolute top-1 left-1 right-1 bottom-1 border border-dashed border-dust-beige/25 pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col h-full">
+              <div className="text-center border-b border-dust-beige/80 pb-4 mb-3">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-dust-beige/60 bg-weather-stone/40 mb-2">
+                  <Landmark className="w-5 h-5 text-temple-brass" />
+                </div>
+                <span className="block text-[10px] uppercase tracking-widest text-slate-basalt/60 font-semibold mb-1">
                   OFFICIAL GOVERNMENT DOSSIER
                 </span>
                 <h2 className="text-2xl font-serif text-pagoda-wood font-extrabold mt-1">
                   {selectedDistrict} District
                 </h2>
+                {selectedDistrictRecord && (
+                  <span className="inline-block text-[10px] text-terraced-pine bg-terraced-pine/10 px-2 py-0.5 mt-1.5 font-bold uppercase rounded-sm">
+                    {selectedDistrictRecord.province}
+                  </span>
+                )}
               </div>
 
               {selectedDistrictRecord ? (
                 mapMode === 'district' ? (
-                  <div className="space-y-5 animate-fade-in text-left">
-                    
-                    {/* CDO Profile Card */}
-                    <div className="bg-slate-50 p-4 border border-slate-200 rounded flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center border border-slate-200">
-                        <User className="w-5 h-5 text-slate-500" />
-                      </div>
-                      <div>
-                        <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                          Chief District Officer
-                        </span>
-                        <h3 className="text-sm text-pagoda-wood font-extrabold">
-                          {selectedDistrictRecord.cdoName || 'CDO details pending verification'}
-                        </h3>
-                        {selectedDistrictRecord.assistantCdo && (
-                          <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Asst: {selectedDistrictRecord.assistantCdo}</span>
-                        )}
-                      </div>
+                  <div className="flex flex-col flex-grow text-left">
+                    {/* Tab Navigation */}
+                    <div className="flex border-b border-slate-200 mb-4 bg-slate-50 p-1 rounded-sm">
+                      <button
+                        onClick={() => setActiveDashboardTab('cdo')}
+                        className={`flex-1 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider rounded-sm transition-all ${
+                          activeDashboardTab === 'cdo'
+                            ? 'bg-pagoda-wood text-white shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        CDO & Contacts
+                      </button>
+                      <button
+                        onClick={() => setActiveDashboardTab('demographics')}
+                        className={`flex-1 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider rounded-sm transition-all ${
+                          activeDashboardTab === 'demographics'
+                            ? 'bg-pagoda-wood text-white shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Stats
+                      </button>
+                      <button
+                        onClick={() => setActiveDashboardTab('reports')}
+                        className={`flex-1 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider rounded-sm transition-all ${
+                          activeDashboardTab === 'reports'
+                            ? 'bg-pagoda-wood text-white shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Feed
+                      </button>
                     </div>
 
-                    {/* Detailed info lists */}
-                    <div className="space-y-3 text-xs text-slate-700">
-                      
-                      {selectedDistrictRecord.headquarters && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span className="text-slate-400 font-bold uppercase text-[9px]">Headquarters</span>
-                          <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.headquarters}</span>
-                        </div>
-                      )}
+                    {/* Tab Content */}
+                    <div className="flex-grow overflow-y-auto max-h-[400px] pr-1">
+                      {activeDashboardTab === 'cdo' && (
+                        <div className="space-y-4 animate-fade-in text-xs text-slate-700">
+                          {selectedDistrictRecord.cdo.isVerified ? (
+                            <div className="bg-slate-50 p-3.5 border border-slate-200 rounded flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-slate-200 relative">
+                                <User className="w-5 h-5 text-slate-500" />
+                                <span className="absolute -bottom-1 -right-1 bg-green-600 text-white p-0.5 rounded-full text-[8px] font-bold">✓</span>
+                              </div>
+                              <div>
+                                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                                  Chief District Officer (Verified)
+                                </span>
+                                <h3 className="text-xs font-bold text-pagoda-wood">
+                                  {selectedDistrictRecord.cdo.name}
+                                </h3>
+                                {selectedDistrictRecord.cdo.assistant && selectedDistrictRecord.cdo.assistant !== 'Data Unavailable' && (
+                                  <span className="text-[9px] text-slate-400 font-bold block mt-0.5">Asst: {selectedDistrictRecord.cdo.assistant}</span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-red-50/50 p-3.5 border border-red-200/50 rounded flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center border border-red-200">
+                                <User className="w-5 h-5 text-red-600" />
+                              </div>
+                              <div>
+                                <span className="block text-[8px] font-bold uppercase tracking-wider text-red-500">
+                                  Chief District Officer
+                                </span>
+                                <h3 className="text-xs font-bold text-red-700">
+                                  Data Unavailable
+                                </h3>
+                              </div>
+                            </div>
+                          )}
 
-                      {selectedDistrictRecord.areaSqKm && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span className="text-slate-400 font-bold uppercase text-[9px]">Area sq km</span>
-                          <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.areaSqKm}</span>
-                        </div>
-                      )}
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">Hotline</span>
+                              <span className="font-bold text-slate-800">{selectedDistrictRecord.cdo.phone}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">DAO Email</span>
+                              <span className="font-bold text-blue-600 hover:underline font-mono">
+                                {selectedDistrictRecord.cdo.email !== 'Data Unavailable' ? (
+                                  <a href={`mailto:${selectedDistrictRecord.cdo.email}`}>{selectedDistrictRecord.cdo.email}</a>
+                                ) : 'Data Unavailable'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">Website</span>
+                              <span className="font-bold text-blue-600 hover:underline">
+                                {selectedDistrictRecord.cdo.website !== 'Data Unavailable' ? (
+                                  <a href={selectedDistrictRecord.cdo.website} target="_blank" rel="noreferrer">Visit Website</a>
+                                ) : 'Data Unavailable'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">Office Hours</span>
+                              <span className="font-bold text-slate-800">{selectedDistrictRecord.cdo.officeHours}</span>
+                            </div>
+                            <div className="py-1">
+                              <span className="block text-slate-400 font-bold uppercase text-[9px] mb-0.5">Address</span>
+                              <span className="font-medium text-slate-800">{selectedDistrictRecord.cdo.office}</span>
+                            </div>
 
-                      {selectedDistrictRecord.population && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span className="text-slate-400 font-bold uppercase text-[9px]">Population</span>
-                          <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.population}</span>
-                        </div>
-                      )}
-
-                      {selectedDistrictRecord.mayorName && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span className="text-slate-400 font-bold uppercase text-[9px]">HQ Mayor</span>
-                          <span className="font-bold text-nepal-red">{selectedDistrictRecord.mayorName}</span>
-                        </div>
-                      )}
-
-                      {selectedDistrictRecord.daoAddress && (
-                        <div className="py-2">
-                          <span className="block text-slate-400 font-bold uppercase text-[9px] mb-1">DAO Office Address</span>
-                          <span className="font-medium text-slate-800">{selectedDistrictRecord.daoAddress}</span>
-                        </div>
-                      )}
-
-                      {selectedDistrictRecord.daoContact && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span className="text-slate-400 font-bold uppercase text-[9px]">DAO Contact</span>
-                          <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.daoContact}</span>
-                        </div>
-                      )}
-
-                      {selectedDistrictRecord.daoEmail && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span className="text-slate-400 font-bold uppercase text-[9px]">DAO Email</span>
-                          <span className="font-bold text-blue-600 hover:underline"><a href={`mailto:${selectedDistrictRecord.daoEmail}`}>{selectedDistrictRecord.daoEmail}</a></span>
-                        </div>
-                      )}
-
-                      {selectedDistrictRecord.daoWebsite && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                          <span className="text-slate-400 font-bold uppercase text-[9px]">DAO Website</span>
-                          <a href={selectedDistrictRecord.daoWebsite} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline flex items-center gap-1">
-                            Link <Globe className="w-3 h-3" />
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Emergency contacts block */}
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        {selectedDistrictRecord.policeContact && (
-                          <div className="bg-slate-50 p-2.5 rounded border border-slate-100">
-                            <span className="block text-[8px] font-bold uppercase text-slate-400">Police Hotline</span>
-                            <span className="font-extrabold text-slate-700">{selectedDistrictRecord.policeContact}</span>
+                            {/* Emergency Contacts */}
+                            {selectedDistrictRecord.cdo.isVerified && (selectedDistrictRecord.policeContact || selectedDistrictRecord.emergencyContact) && (
+                              <div className="grid grid-cols-2 gap-2 pt-2">
+                                {selectedDistrictRecord.policeContact && (
+                                  <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                                    <span className="block text-[8px] font-bold uppercase text-slate-400">Police Hotline</span>
+                                    <span className="font-extrabold text-slate-700">{selectedDistrictRecord.policeContact}</span>
+                                  </div>
+                                )}
+                                {selectedDistrictRecord.emergencyContact && (
+                                  <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                                    <span className="block text-[8px] font-bold uppercase text-slate-400">Emergency Ops</span>
+                                    <span className="font-extrabold text-slate-700">{selectedDistrictRecord.emergencyContact}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {selectedDistrictRecord.emergencyContact && (
-                          <div className="bg-slate-50 p-2.5 rounded border border-slate-100">
-                            <span className="block text-[8px] font-bold uppercase text-slate-400">Emergency Ops</span>
-                            <span className="font-extrabold text-slate-700">{selectedDistrictRecord.emergencyContact}</span>
-                          </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
 
+                      {activeDashboardTab === 'demographics' && (
+                        <div className="space-y-4 font-sans animate-fade-in text-xs text-slate-700">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-slate-50 p-3.5 border border-slate-200 rounded text-center">
+                              <span className="block text-[9px] font-bold text-slate-400 uppercase">Population</span>
+                              <span className="text-lg font-bold text-pagoda-wood block mt-1">
+                                {selectedDistrictRecord.population ? Number(selectedDistrictRecord.population).toLocaleString() : 'Data Unavailable'}
+                              </span>
+                            </div>
+                            <div className="bg-slate-50 p-3.5 border border-slate-200 rounded text-center">
+                              <span className="block text-[9px] font-bold text-slate-400 uppercase">Local Units</span>
+                              <span className="text-lg font-bold text-pagoda-wood block mt-1">
+                                {selectedDistrictRecord.municipalitiesCount || 'Data Unavailable'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                              <span className="text-slate-400 font-bold uppercase text-[9px]">Province</span>
+                              <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.province}</span>
+                            </div>
+                            {selectedDistrictRecord.headquarters && (
+                              <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                                <span className="text-slate-400 font-bold uppercase text-[9px]">Headquarters</span>
+                                <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.headquarters}</span>
+                              </div>
+                            )}
+                            {selectedDistrictRecord.areaSqKm && (
+                              <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                                <span className="text-slate-400 font-bold uppercase text-[9px]">Area</span>
+                                <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.areaSqKm} sq km</span>
+                              </div>
+                            )}
+                            {selectedDistrictRecord.ruralMunicipalitiesCount !== undefined && (
+                              <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                                <span className="text-slate-400 font-bold uppercase text-[9px]">Rural Municipalities</span>
+                                <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.ruralMunicipalitiesCount}</span>
+                              </div>
+                            )}
+                            {selectedDistrictRecord.mayorName && (
+                              <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                                <span className="text-slate-400 font-bold uppercase text-[9px]">HQ Mayor</span>
+                                <span className="font-bold text-pagoda-wood">{selectedDistrictRecord.mayorName}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeDashboardTab === 'reports' && (
+                        <div className="space-y-4 font-sans animate-fade-in text-xs">
+                          <div>
+                            <h4 className="text-xs font-bold text-pagoda-wood uppercase border-b border-slate-100 pb-1 mb-2 tracking-wide">Public Notices</h4>
+                            {selectedDistrictRecord.publicNotices && selectedDistrictRecord.publicNotices.length > 0 ? (
+                              <div className="space-y-2 text-left">
+                                {selectedDistrictRecord.publicNotices.map((notice) => (
+                                  <div key={notice.id} className="bg-amber-50 border border-amber-200/50 p-2.5 rounded-sm">
+                                    <div className="flex justify-between text-[9px] text-amber-800 font-semibold mb-1">
+                                      <span>NOTICE</span>
+                                      <span>{notice.date}</span>
+                                    </div>
+                                    <p className="text-xs font-medium text-slate-700">{notice.title}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic py-2 text-center">No active notices.</p>
+                            )}
+                          </div>
+
+                          <div className="pt-2">
+                            <h4 className="text-xs font-bold text-pagoda-wood uppercase border-b border-slate-100 pb-1 mb-2 tracking-wide">Citizen Reports</h4>
+                            {selectedDistrictRecord.citizenReports && selectedDistrictRecord.citizenReports.length > 0 ? (
+                              <div className="space-y-2 text-left">
+                                {selectedDistrictRecord.citizenReports.map((report) => (
+                                  <div key={report.id} className="bg-slate-50 border border-slate-200 p-2.5 rounded-sm">
+                                    <div className="flex justify-between text-[9px] font-semibold mb-1">
+                                      <span className="text-slate-500 uppercase">{report.category}</span>
+                                      <span className={report.status === 'verified' ? 'text-green-700 bg-green-50 px-1 border border-green-200' : 'text-amber-700 bg-amber-50 px-1 border border-amber-200'}>
+                                        {report.status.toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <h5 className="text-xs font-bold text-slate-800 mb-0.5">{report.title}</h5>
+                                    <p className="text-[11px] text-slate-600 leading-relaxed">{report.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic py-2 text-center">No citizen reports recorded.</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (

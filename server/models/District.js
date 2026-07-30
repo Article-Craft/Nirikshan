@@ -91,6 +91,16 @@ const District = sequelize.define('District', {
     type: DataTypes.STRING,
     field: 'mayor_name',
     allowNull: true
+  },
+  publicNotices: {
+    type: DataTypes.TEXT,
+    field: 'public_notices',
+    allowNull: true
+  },
+  citizenReports: {
+    type: DataTypes.TEXT,
+    field: 'citizen_reports',
+    allowNull: true
   }
 }, {
   tableName: 'districts'

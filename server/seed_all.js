@@ -265,6 +265,11 @@ async function seedAll() {
     await sequelize.authenticate();
     console.log('Connected to database. Seeding entire platform dataset...');
 
+    if (sequelize.options.dialect === 'postgres') {
+      await sequelize.query('CREATE EXTENSION IF NOT EXISTS postgis;');
+      console.log('PostGIS extension verified/created.');
+    }
+
     // Recreate tables to avoid conflicts
     await sequelize.sync({ force: true });
     console.log('Database synced (tables recreated).');

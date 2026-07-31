@@ -74,6 +74,11 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Database connected successfully.');
 
+    if (sequelize.options.dialect === 'postgres') {
+      await sequelize.query('CREATE EXTENSION IF NOT EXISTS postgis;');
+      console.log('PostGIS extension verified/created.');
+    }
+
     // sync models (optional, for development purposes)
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
       await sequelize.sync();

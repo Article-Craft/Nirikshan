@@ -90,7 +90,7 @@ export default function CreatePromise() {
               <label className="block font-semibold text-slate-basalt mb-1">Official Representative Name</label>
               <input
                 type="text"
-                placeholder="e.g. Gagan Thapa"
+                placeholder="e.g. Balendra Shah"
                 value={officialName}
                 onChange={(e) => setOfficialName(e.target.value)}
                 className="w-full bg-himalayan-mist/50 border border-dust-beige/80 py-2 px-3 focus:outline-none focus:border-temple-brass"

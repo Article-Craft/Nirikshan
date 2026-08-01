@@ -89,17 +89,17 @@ describe('Representatives Endpoints', () => {
       .post('/api/representatives')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        name: 'Gagan Kumar Thapa',
-        party: 'NC',
+        name: 'PM Balendra Shah',
+        party: 'IND',
         constituencyId: 'KTM-1',
         position: 'Member of Parliament',
         attendancePercent: 90,
         billsSponsored: 12,
-        contactInfo: 'gagan@thapa.com'
+        contactInfo: 'balen@shah.com'
       });
 
     expect(res.status).toBe(201);
-    expect(res.body.name).toBe('Gagan Kumar Thapa');
+    expect(res.body.name).toBe('PM Balendra Shah');
   });
 
   it('should fail to create a representative with citizen auth', async () => {

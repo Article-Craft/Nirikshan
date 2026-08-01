@@ -23,7 +23,7 @@ const explicitDistrictData = {
       { id: 'KTM-1', name: 'Kathmandu 1', winner: 'Prakash Man Singh', party: 'NC', votes: 7143, margin: '125 votes', promisesCount: 12, progress: 65 },
       { id: 'KTM-2', name: 'Kathmandu 2', winner: 'Sobita Gautam', party: 'RSP', votes: 15229, margin: '3,122 votes', promisesCount: 8, progress: 40 },
       { id: 'KTM-3', name: 'Kathmandu 3', winner: 'Santosh Chalise', party: 'NC', votes: 15158, margin: '1,420 votes', promisesCount: 10, progress: 50 },
-      { id: 'KTM-4', name: 'Kathmandu 4', winner: 'Gagan Kumar Thapa', party: 'NC', votes: 21302, margin: '7,446 votes', promisesCount: 18, progress: 75 },
+      { id: 'KTM-4', name: 'Kathmandu 4', winner: 'PM Balendra Shah', party: 'IND', votes: 21302, margin: '7,446 votes', promisesCount: 18, progress: 75 },
       { id: 'KTM-5', name: 'Kathmandu 5', winner: 'Pradip Paudel', party: 'NC', votes: 15237, margin: '5,022 votes', promisesCount: 14, progress: 60 },
       { id: 'KTM-6', name: 'Kathmandu 6', winner: 'Shishir Khanal', party: 'RSP', votes: 14204, margin: '4,102 votes', promisesCount: 9, progress: 45 },
       { id: 'KTM-7', name: 'Kathmandu 7', winner: 'Ganesh Parajuli', party: 'RSP', votes: 8743, margin: '1,502 votes', promisesCount: 7, progress: 30 },

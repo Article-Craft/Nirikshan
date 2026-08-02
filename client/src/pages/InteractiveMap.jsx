@@ -188,18 +188,18 @@ export default function InteractiveMap() {
             fillColor: partyColor,
             weight: isSelected ? 3.5 : 1,
             opacity: 0.9,
-            color: isSelected ? '#DC2626' : '#FAF9F6',
+            color: isSelected ? '#B5944B' : '#FAF9F6',
             fillOpacity: isSelected ? 0.95 : 0.8
           };
         }
       }
 
       return {
-        fillColor: isSelected ? '#FEF2F2' : '#FFFFFF',
+        fillColor: baseColor,
         weight: isSelected ? 3 : 1,
         opacity: 0.9,
-        color: isSelected ? '#DC2626' : '#94A3B8',
-        fillOpacity: isSelected ? 0.95 : 0.85
+        color: isSelected ? '#B5944B' : '#4E3E2F',
+        fillOpacity: isSelected ? 0.95 : 0.75
       };
     };
 
@@ -311,9 +311,8 @@ export default function InteractiveMap() {
   // Selected district details
   const selectedDistrictRecord = useMemo(() => {
     if (districtsList.length === 0) return null;
-    const normalizedSel = normalizeName(selectedDistrict);
-    return districtsList.find(d => normalizeName(d.name) === normalizedSel);
-  }, [selectedDistrict, districtsList]);
+    return getDistrictDataLocal(selectedDistrict);
+  }, [selectedDistrict, districtDataMap]);
 
   const districtConstituencies = useMemo(() => {
     if (!selectedDistrictRecord) return [];
@@ -535,7 +534,7 @@ export default function InteractiveMap() {
             </div>
           </div>
 
-          <div className="relative h-[320px] sm:h-[480px] w-full border border-slate-200 bg-[#FFFFFF] overflow-hidden rounded">
+          <div className="relative h-[320px] sm:h-[480px] w-full border-2 border-temple-brass/30 bg-[#1A130B] overflow-hidden rounded shadow-lg">
             <div ref={mapRef} className="h-full w-full z-10" />
             
             {mapMode === 'constituency' && (

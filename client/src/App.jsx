@@ -281,15 +281,15 @@ export default function App() {
             {/* Client-side routing configuration for Nirikshan */}
             <Routes>
               <Route path="/" element={<LandingPage setUser={setUser} />} />
-              <Route path="/promises" element={<Dashboard user={user} />} />
-              <Route path="/map" element={<InteractiveMap />} />
-              <Route path="/directory" element={<RepresentativeDirectory />} />
-              <Route path="/rti" element={<RtiAssistant user={user} />} />
-              <Route path="/civic-map" element={<CivicMap />} />
-              <Route path="/promises/:id" element={<PromiseDetail user={user} />} />
+              <Route path="/promises" element={user && !user.isAnonymous ? <Dashboard user={user} /> : <Navigate to="/" replace />} />
+              <Route path="/map" element={user && !user.isAnonymous ? <InteractiveMap /> : <Navigate to="/" replace />} />
+              <Route path="/directory" element={user && !user.isAnonymous ? <RepresentativeDirectory /> : <Navigate to="/" replace />} />
+              <Route path="/rti" element={user && !user.isAnonymous ? <RtiAssistant user={user} /> : <Navigate to="/" replace />} />
+              <Route path="/civic-map" element={user && !user.isAnonymous ? <CivicMap /> : <Navigate to="/" replace />} />
+              <Route path="/promises/:id" element={user && !user.isAnonymous ? <PromiseDetail user={user} /> : <Navigate to="/" replace />} />
               <Route path="/promises/new" element={user && !user.isAnonymous ? <CreatePromise /> : <Navigate to="/" replace />} />
               <Route path="/moderation" element={user && !user.isAnonymous ? <ModeratorDashboard /> : <Navigate to="/" replace />} />
-              <Route path="/representative/:id" element={<RepresentativeReportCard />} />
+              <Route path="/representative/:id" element={user && !user.isAnonymous ? <RepresentativeReportCard /> : <Navigate to="/" replace />} />
             </Routes>
           </main>
 

@@ -191,11 +191,11 @@ Continuous Integration is configured via GitHub Actions (`.github/workflows/ci.y
 
 This platform was developed as a Team project by:
 
-* **Ashmit** — Promise Tracker & System Architecture
-* **Sujit** — Representative Report Cards
-* **Samir** — Interactive Map (Constituency & CDO details)
-* **Nischal** — Budget Visualiser & Complaint Heatmap
-* **Pritam** — RTI Assistant & Civic Map
+* **Ashmit** - Promise Tracker & System Architecture
+* **Sujit** - Representative Report Cards
+* **Samir** - Interactive Map (Constituency & CDO details)
+* **Nischal** - Budget Visualiser & Complaint Heatmap
+* **Pritam** - RTI Assistant & Civic Map
 
 ## License
 

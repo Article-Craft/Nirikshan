@@ -21,6 +21,10 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data).then(res => res.data),
   login: (data) => api.post('/auth/login', data).then(res => res.data),
   anonymousSession: () => api.post('/auth/anonymous-session').then(res => res.data),
+  getMe: () => api.get('/auth/me').then(res => res.data),
+  updateProfile: (data) => api.put('/auth/profile', data).then(res => res.data),
+  deactivate: () => api.post('/auth/deactivate').then(res => res.data),
+  deleteAccount: () => api.post('/auth/delete').then(res => res.data),
 };
 
 export const promisesAPI = {
@@ -50,6 +54,7 @@ export const districtsAPI = {
 export const representativesAPI = {
   getAll: (params) => api.get('/representatives', { params }).then(res => res.data),
   getById: (id) => api.get(`/representatives/${id}`).then(res => res.data),
+  create: (data) => api.post('/representatives', data).then(res => res.data),
   submitRating: (id, data) => api.post(`/representatives/${id}/rating`, data).then(res => res.data),
 };
 
@@ -61,6 +66,22 @@ export const budgetAPI = {
 export const complaintsAPI = {
   getAll: (params) => api.get('/complaints', { params }).then(res => res.data),
   create: (data) => api.post('/complaints', data).then(res => res.data),
+};
+
+export const partiesAPI = {
+  getAll: () => api.get('/parties').then(res => res.data),
+  create: (data) => api.post('/parties', data).then(res => res.data),
+  update: (id, data) => api.put(`/parties/${id}`, data).then(res => res.data),
+  delete: (id) => api.delete(`/parties/${id}`).then(res => res.data),
+};
+
+export const adminAPI = {
+  getUsers: () => api.get('/admin/users').then(res => res.data),
+  updateUserStatus: (id, status) => api.put(`/admin/users/${id}/status`, { status }).then(res => res.data),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }).then(res => res.data),
+  getSettings: () => api.get('/admin/settings').then(res => res.data),
+  saveSettings: (data) => api.put('/admin/settings', data).then(res => res.data),
+  getMetrics: () => api.get('/admin/metrics').then(res => res.data),
 };
 
 export default api;

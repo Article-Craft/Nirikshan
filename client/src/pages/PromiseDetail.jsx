@@ -146,13 +146,16 @@ export default function PromiseDetail({ user }) {
               No status transitions have been logged yet.
             </div>
           ) : (
-            <div className="relative border-l-2 border-dust-beige ml-4 pl-6 space-y-8">
-              {timeline.map((step) => {
+            <div className="relative ml-4 pl-6 space-y-8">
+              {/* Animated Vertical Line */}
+              <div className="absolute left-[3px] top-0 bottom-0 w-[2px] bg-weathered-stone origin-top animate-grow-line-y"></div>
+
+              {timeline.map((step, idx) => {
                 const stepStatus = statusLabels[step.newStatus] || statusLabels.promised;
                 return (
-                  <div key={step.id} className="relative">
+                  <div key={step.id} className="relative animate-fade-in-up opacity-0 [animation-fill-mode:forwards]" style={{ animationDelay: `${(idx + 1) * 200}ms` }}>
                     {/* Circle Node */}
-                    <span className="absolute -left-[31px] top-1.5 bg-himalayan-mist border-2 border-dust-beige rounded-full w-4 h-4 flex items-center justify-center">
+                    <span className="absolute -left-[31px] top-1.5 bg-himalayan-mist border-2 border-temple-brass rounded-full w-4 h-4 flex items-center justify-center animate-[pulse_2s_infinite]">
                       <span className="bg-temple-brass rounded-full w-1.5 h-1.5"></span>
                     </span>
 
@@ -170,7 +173,7 @@ export default function PromiseDetail({ user }) {
                     </p>
 
                     {step.evidence && (
-                      <div className="mt-3 bg-weather-stone/40 border border-dust-beige/50 p-4">
+                      <div className="mt-3 bg-weather-stone/40 border border-dust-beige/50 p-4 rounded transition-all hover:bg-weather-stone/50">
                         <p className="text-sm text-slate-basalt/90 mb-3">{step.evidence.description}</p>
                         <a
                           href={step.evidence.file_url}

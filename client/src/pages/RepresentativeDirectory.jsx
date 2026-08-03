@@ -244,8 +244,14 @@ export default function RepresentativeDirectory() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredReps.map(rep => (
-                  <RepCard key={rep.id} rep={rep} />
+                {filteredReps.map((rep, idx) => (
+                  <div 
+                    key={rep.id} 
+                    className="animate-fade-in-up opacity-0 [animation-fill-mode:forwards]" 
+                    style={{ animationDelay: `${(idx % 12) * 50}ms` }}
+                  >
+                    <RepCard rep={rep} />
+                  </div>
                 ))}
               </div>
             )}

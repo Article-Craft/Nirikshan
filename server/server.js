@@ -15,6 +15,8 @@ const budgetRoutes = require('./routes/budgetProjects');
 const complaintRoutes = require('./routes/complaints');
 const rtiRoutes = require('./routes/rtiRequests');
 const civicEventRoutes = require('./routes/civicEvents');
+const partyRoutes = require('./routes/parties');
+const adminRoutes = require('./routes/admin');
 
 require('dotenv').config();
 
@@ -56,6 +58,8 @@ app.use('/api/budget-projects', budgetRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/rti-requests', rtiRoutes);
 app.use('/api/civic-events', civicEventRoutes);
+app.use('/api/parties', partyRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Base route
 app.get('/', (req, res) => {

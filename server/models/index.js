@@ -10,6 +10,8 @@ const BudgetProject = require('./BudgetProject');
 const Complaint = require('./Complaint');
 const RtiRequest = require('./RtiRequest');
 const CivicEvent = require('./CivicEvent');
+const PoliticalParty = require('./PoliticalParty');
+const PlatformSetting = require('./PlatformSetting');
 
 // Existing Associations
 User.hasMany(PromiseModel, { foreignKey: 'created_by', as: 'promises' });
@@ -69,5 +71,8 @@ module.exports = {
   BudgetProject,
   Complaint,
   RtiRequest,
-  CivicEvent
+  CivicEvent,
+  PoliticalParty,
+  PlatformSetting
 };
+

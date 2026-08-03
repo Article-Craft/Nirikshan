@@ -174,4 +174,94 @@ router.post('/anonymous-session', async (req, res) => {
   }
 });
 
+const { authenticateToken } = require('../middleware/auth');
+
+/**
+ * GET /api/auth/me
+ * Fetch current user profile details
+ */
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['passwordHash'] }
+    });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error('Fetch profile error:', err);
+    res.status(500).json({ error: 'Failed to retrieve profile' });
+  }
+});
+
+/**
+ * PUT /api/auth/profile
+ * Update profile configurations
+ */
+router.put('/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { name, bio, phone, photoUrl, coverUrl, occupation, organization, province, district, municipality } = req.body;
+    
+    if (name) user.name = name;
+    if (bio !== undefined) user.bio = bio;
+    if (phone !== undefined) user.phone = phone;
+    if (photoUrl !== undefined) user.photoUrl = photoUrl;
+    if (coverUrl !== undefined) user.coverUrl = coverUrl;
+    if (occupation !== undefined) user.occupation = occupation;
+    if (organization !== undefined) user.organization = organization;
+    if (province !== undefined) user.province = province;
+    if (district !== undefined) user.district = district;
+    if (municipality !== undefined) user.municipality = municipality;
+
+    await user.save();
+    res.json({ message: 'Profile updated successfully', user });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+/**
+ * POST /api/auth/deactivate
+ * Self-service deactivation
+ */
+router.post('/deactivate', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user.status = 'suspended';
+    await user.save();
+    res.json({ message: 'Account deactivated successfully.' });
+  } catch (err) {
+    console.error('Deactivate account error:', err);
+    res.status(500).json({ error: 'Failed to deactivate account' });
+  }
+});
+
+/**
+ * POST /api/auth/delete
+ * Self-service account deletion
+ */
+router.post('/delete', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    await user.destroy();
+    res.json({ message: 'Account permanently deleted.' });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
 module.exports = router;

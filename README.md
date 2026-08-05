@@ -4,9 +4,11 @@
 [![React](https://img.shields.io/badge/Frontend-React-9C7A3C)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-2E2418)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-9C7A3C)](https://www.postgresql.org/)
-[![Nirikshan-Release](https://img.shields.io/badge/Version-v2.0.0--Government--Grade-DC2626)](#)
+[![Nirikshan-Release](https://img.shields.io/badge/Version-v2.0.0--Government--Grade-DC2626)](https://nirikshan-tau.vercel.app/)
 
 > **Track. Understand. Act.**
+>
+> **Live Demo:** [nirikshan-tau.vercel.app](https://nirikshan-tau.vercel.app/)
 
 ---
 
@@ -203,4 +205,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact & Acknowledgements
 
+* **Website:** [https://nirikshan-tau.vercel.app](https://nirikshan-tau.vercel.app)
 * **Repository:** [https://github.com/devashmit/Nirikshan](https://github.com/devashmit/Nirikshan)

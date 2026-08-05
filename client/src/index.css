@@ -9,24 +9,24 @@
   --font-sans: 'Inter', 'Public Sans', 'IBM Plex Sans', sans-serif;
   --font-serif: 'Public Sans', 'Source Sans 3', sans-serif;
 
-  --color-pagoda-wood: #0B132B; /* Dark Navy */
-  --color-terraced-pine: #1E293B; /* Slate Dark */
-  --color-temple-brass: #D97706; /* Muted Gold Accent */
-  --color-himalayan-mist: #F8FAFC; /* Soft Slate Off-White Background */
-  --color-weather-stone: #E2E8F0; /* Slate Light */
-  --color-weathered-stone: #CBD5E1; /* Slate Border Muted */
-  --color-slate-basalt: #334155; /* Slate Text */
-  --color-dust-beige: #E2E8F0; /* Slate border */
+  --color-pagoda-wood: #2E2418;
+  --color-terraced-pine: #2C3B2A;
+  --color-temple-brass: #9C7A3C;
+  --color-himalayan-mist: #F3EFE4;
+  --color-weather-stone: #E4DCC8;
+  --color-weathered-stone: #E4DCC8;
+  --color-slate-basalt: #453F36;
+  --color-dust-beige: #CFC4A8;
   
   --color-nepal-red: #DC2626; /* Nepal Red */
   
-  --color-status-fulfilled: #16A34A; /* Verified Green */
-  --color-status-delayed: #B45309; /* Muted Gold */
-  --color-status-broken: #DC2626; /* Nepal Red */
+  --color-status-fulfilled: #4F6B45;
+  --color-status-delayed: #8C6A32;
+  --color-status-broken: #6E4438;
   
-  --color-rhododendron-green: #16A34A;
-  --color-turmeric-clay: #B45309;
-  --color-charred-brick: #DC2626;
+  --color-rhododendron-green: #3E5E3D;
+  --color-turmeric-clay: #C48E38;
+  --color-charred-brick: #8B4032;
 }
 
 @layer base {

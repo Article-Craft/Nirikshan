@@ -232,7 +232,7 @@ export default function App() {
   return (
     <>
       {isPreloading && (
-        <div className={`fixed inset-0 bg-[#0B132B] z-[9999] flex flex-col items-center justify-center text-himalayan-mist transition-opacity duration-700 ${preloaderFade ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`fixed inset-0 bg-[#2E2418] z-[9999] flex flex-col items-center justify-center text-himalayan-mist transition-opacity duration-700 ${preloaderFade ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <div className="flex flex-col items-center space-y-8 max-w-sm w-full mx-4 text-center">
             {/* Logo centerpiece */}
             <div className="relative w-24 h-24 flex items-center justify-center">

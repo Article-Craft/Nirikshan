@@ -10,6 +10,9 @@ import RepresentativeReportCard from './pages/RepresentativeReportCard';
 import RtiAssistant from './pages/RtiAssistant';
 import CivicMap from './pages/CivicMap';
 import LandingPage from './pages/LandingPage';
+import ProfileDashboard from './pages/ProfileDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminLayout from './components/AdminLayout';
 import { authAPI } from './api';
 import { ShieldCheck, UserCheck, LogOut, Loader, Award, Shield, Mail, Phone, MapPin, Globe, Menu, X } from 'lucide-react';
 

@@ -233,8 +233,8 @@ function generateRealisticName(seedStr, suffix = '') {
   
   const first = NEPOLI_FIRST_NAMES[hash % NEPOLI_FIRST_NAMES.length];
   const useMiddle = hash % 3 !== 0;
-  const middle = useMiddle ? " " + NEPOLI_MIDDLE_NAMES[(hash >> 2) % NEPOLI_MIDDLE_NAMES.length] : "";
-  const last = NEPOLI_LAST_NAMES[(hash >> 4) % NEPOLI_LAST_NAMES.length];
+  const middle = useMiddle ? " " + NEPOLI_MIDDLE_NAMES[Math.floor(hash / 4) % NEPOLI_MIDDLE_NAMES.length] : "";
+  const last = NEPOLI_LAST_NAMES[Math.floor(hash / 16) % NEPOLI_LAST_NAMES.length];
   
   return `${first}${middle} ${last}`;
 }

@@ -36,13 +36,16 @@ app.use(cors({
 // Express parser
 app.use(express.json());
 
+// Trust proxy for rate limiting (especially on Vercel/Render deployments)
+app.set('trust proxy', 1);
+
 // Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rate Limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 500, // limit each IP to 500 requests per windowMs
   message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
 });
 app.use('/api/', limiter);
